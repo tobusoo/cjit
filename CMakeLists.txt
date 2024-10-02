@@ -14,6 +14,6 @@ add_definitions(${CLANG_DEFINITIONS})
 
 add_executable(cjit cjit.cpp)
 
-llvm_map_components_to_libnames(llvm_libs support core irreader)
-
-target_link_libraries(cjit ${CMAKE_DL_LIBS} pthread ${llvm_libs} clang-cpp)
+# WARNING: Do not link with LLVM libraries here! It will result
+# in duplicates coming from clang-cpp.
+target_link_libraries(cjit ${CMAKE_DL_LIBS} pthread clang-cpp)
