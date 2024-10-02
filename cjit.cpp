@@ -23,7 +23,9 @@ using clang::DiagnosticIDs;
 using llvm::ArrayRef;
 using llvm::IntrusiveRefCntPtr;
 using llvm::MemoryBuffer;
+
 using namespace std;
+using namespace llvm;
 
 int main() {
   // Path to the C file
@@ -32,6 +34,14 @@ int main() {
   // Arguments to pass to the clang frontend
   vector<const char *> args;
   args.push_back(inputPath.c_str());
+
+  // Prepare DiagnosticEngine
+  DiagnosticOptions DiagOpts;
+  TextDiagnosticPrinter *textDiagPrinter =
+      new clang::TextDiagnosticPrinter(errs(), &DiagOpts);
+  IntrusiveRefCntPtr<clang::DiagnosticIDs> pDiagIDs;
+  DiagnosticsEngine *pDiagnosticsEngine =
+      new DiagnosticsEngine(pDiagIDs, &DiagOpts, textDiagPrinter);
 
   // auto DiagOpts = DiagnosticOptions();
   // DiagOpts.ShowLine = true;
@@ -47,22 +57,32 @@ int main() {
   //   = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
   // FixupDiagPrefixExeName(DiagClient, ProgName);
 
-  IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
+  // IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
 
   // DiagnosticsEngine Diags(DiagID, &*DiagOpts, DiagClient);
-  auto Diags = CompilerInstance::createDiagnostics(new DiagnosticOptions);
+  // auto Diags = CompilerInstance::createDiagnostics(new DiagnosticOptions);
 
   // Create the compiler invocation
   auto CI = std::make_shared<CompilerInvocation>();
-  bool Created = clang::CompilerInvocation::CreateFromArgs(*CI, args, *Diags);
+  bool Created = clang::CompilerInvocation::CreateFromArgs(*CI, args, *pDiagnosticsEngine);
   if (!Created) {
     std::cerr << "Failed to create compiler\n";
     return 1;
   }
 
   // Create the compiler instance
-  clang::CompilerInstance Clang = CompilerInstance::Create;
+  clang::CompilerInstance Clang;
   Clang.setInvocation(CI);
+  Clang.createDiagnostics();
+
+  InitializeAllTargets();
+  // Initialize
+  const std::shared_ptr<clang::TargetOptions> targetOptions =
+      std::make_shared<clang::TargetOptions>();
+  // targetOptions->Triple = string("x86-64");
+  clang::TargetInfo *pTargetInfo =
+      clang::TargetInfo::CreateTargetInfo(*pDiagnosticsEngine, targetOptions);
+  Clang.setTarget(pTargetInfo);
 
   // Get ready to report problems
   // Clang.createDiagnostics(DiagOpts.get(), DiagClient);
