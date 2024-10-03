@@ -11,6 +11,6 @@ add_definitions(${LLVM_DEFINITIONS})
 
 add_library(optimizer SHARED optimizer.cpp)
 
-llvm_map_components_to_libnames(llvm_libs core)
+llvm_map_components_to_libnames(llvm_libs core irreader support)
 
 target_link_libraries(optimizer ${llvm_libs})

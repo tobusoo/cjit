@@ -25,7 +25,7 @@
 using namespace llvm;
 using namespace clang;
 
-using OptimizeFuncTy = const char *(const char *);
+using OptimizeFuncTy = bool(const char *, const char **, size_t *);
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -102,24 +102,31 @@ int main(int argc, char **argv) {
   Module->print(OS, /*AAW=*/nullptr);
   std::cerr << ModuleStr << "\n";
 
-  // const char *Optimizer = argv[1];
-  // void *OptLib = dlopen(Optimizer, RTLD_LOCAL | RTLD_LAZY);
-  // if (!OptLib) {
-  //   std::cerr << "Failed to open optimizer library " << Optimizer << "\n";
-  //   return 1;
-  // }
+  const char *Optimizer = argv[1];
+  void *OptLib = dlopen(Optimizer, RTLD_LOCAL | RTLD_LAZY);
+  if (!OptLib) {
+    std::cerr << "Failed to open optimizer library " << Optimizer << "\n";
+    return 1;
+  }
 
-  // OptimizeFuncTy *OptFunc = (OptimizeFuncTy *)dlsym(OptLib, "optimize");
-  // if (!OptFunc) {
-  //   std::cerr << "Failed to find 'optimize' symbol in optimizer library "
-  //             << Optimizer << "\n";
-  //   return 1;
-  // }
+  OptimizeFuncTy *OptFunc = (OptimizeFuncTy *)dlsym(OptLib, "optimize");
+  if (!OptFunc) {
+    std::cerr << "Failed to find 'optimize' symbol in optimizer library "
+              << Optimizer << "\n";
+    return 1;
+  }
 
-  // auto OptimizedModuleStr = std::string(OptFunc(ModuleStr.c_str()));
-  // std::cerr << "IR After Optimizations: " << OptimizedModuleStr << "\n";
+  const char *OptimizedModuleStr;
+  size_t OptimizedModuleLen;
+  bool Optimized = OptFunc(ModuleStr.c_str(), &OptimizedModuleStr, &OptimizedModuleLen);
+  if (!Optimized) {
+    std::cerr << "Failed to optimize\n";
+    return 1;
+  }
 
-  // (void)dlclose(OptLib);
+  std::cerr << "IR After Optimizations: " << std::string(OptimizedModuleStr, OptimizedModuleLen) << "\n";
+
+  (void)dlclose(OptLib);
   std::cerr << "Finished cjit\n";
   return 0;
 }
