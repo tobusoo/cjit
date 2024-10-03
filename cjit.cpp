@@ -83,10 +83,10 @@ int main(int argc, char **argv) {
   if (!Clang.hasDiagnostics())
     return 1;
 
-  auto Context = std::make_unique<LLVMContext>();
+  // auto Context = std::make_unique<LLVMContext>();
 
   // Create an action and make the compiler instance carry it out
-  auto Act = std::make_unique<EmitLLVMOnlyAction>(&*Context);
+  auto Act = std::make_unique<EmitLLVMOnlyAction>();
 
   if (!Clang.ExecuteAction(*Act)) {
     std::cerr << "Failed to emit module LLVM\n";
@@ -96,25 +96,30 @@ int main(int argc, char **argv) {
 
   // Grab the module built by the EmitLLVMOnlyAction
   auto Module = Act->takeModule();
+  std::cerr << "Got the module\n";
   std::string ModuleStr;
   llvm::raw_string_ostream OS(ModuleStr);
   Module->print(OS, /*AAW=*/nullptr);
+  std::cerr << ModuleStr << "\n";
 
-  const char *Optimizer = argv[1];
-  void *OptLib = dlopen(Optimizer, RTLD_LOCAL | RTLD_LAZY);
-  if (!OptLib) {
-    std::cerr << "Failed to open optimizer library " << Optimizer << "\n";
-    return 1;
-  }
+  // const char *Optimizer = argv[1];
+  // void *OptLib = dlopen(Optimizer, RTLD_LOCAL | RTLD_LAZY);
+  // if (!OptLib) {
+  //   std::cerr << "Failed to open optimizer library " << Optimizer << "\n";
+  //   return 1;
+  // }
 
-  OptimizeFuncTy *OptFunc = (OptimizeFuncTy *)dlsym(OptLib, "optimize");
-  if (!OptFunc) {
-    std::cerr << "Failed to find 'optimize' symbol in optimizer library "
-              << Optimizer << "\n";
-    return 1;
-  }
+  // OptimizeFuncTy *OptFunc = (OptimizeFuncTy *)dlsym(OptLib, "optimize");
+  // if (!OptFunc) {
+  //   std::cerr << "Failed to find 'optimize' symbol in optimizer library "
+  //             << Optimizer << "\n";
+  //   return 1;
+  // }
 
-  auto OptimizedModuleStr = std::string(OptFunc(ModuleStr.c_str()));
-  std::cerr << "IR After Optimizations: " << OptimizedModuleStr << "\n";
+  // auto OptimizedModuleStr = std::string(OptFunc(ModuleStr.c_str()));
+  // std::cerr << "IR After Optimizations: " << OptimizedModuleStr << "\n";
+
+  // (void)dlclose(OptLib);
+  std::cerr << "Finished cjit\n";
   return 0;
 }

@@ -82,3 +82,8 @@ cmake -S . -B build -G Ninja \
     -DClang_DIR=/usr/lib/llvm-19/lib/cmake/clang \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+mac:
+brew install llvm@19
+/opt/homebrew/opt/llvm/lib/cmake/llvm
+/opt/homebrew/opt/llvm/lib/cmake/clang
