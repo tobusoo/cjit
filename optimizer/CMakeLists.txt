@@ -6,11 +6,9 @@ set (CMAKE_CXX_STANDARD 17)
 
 find_package(LLVM REQUIRED CONFIG)
 
-include_directories(${LLVM_INCLUDE_DIRS})
-add_definitions(${LLVM_DEFINITIONS})
-
 add_library(optimizer SHARED optimizer.cpp)
 
-llvm_map_components_to_libnames(llvm_libs core irreader support)
+target_include_directories(optimizer PRIVATE ${LLVM_INCLUDE_DIRS})
+target_compile_definitions(optimizer PRIVATE ${LLVM_DEFINITIONS})
 
-target_link_libraries(optimizer ${llvm_libs})
+target_link_libraries(optimizer LLVM)

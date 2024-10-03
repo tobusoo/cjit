@@ -28,19 +28,17 @@ using namespace clang;
 using OptimizeFuncTy = bool(const char *, const char **, size_t *);
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " /path/to/optimizer\n";
+  if (argc != 3) {
+    std::cerr << "Usage: " << argv[0] << " /path/to/optimizer /path/to/src.c\n";
     return 1;
   }
 
-  // Path to the C file
-  std::string InputPath = "simple.c";
+  std::string InputPath = argv[2];
 
   // Arguments to pass to the clang frontend
   std::vector<const char *> Args;
   Args.push_back(InputPath.c_str());
 
-  // Prepare DiagnosticEngine
   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts(new DiagnosticOptions());
   auto *TextDiagPrinter = new TextDiagnosticPrinter(errs(), &*DiagOpts);
   IntrusiveRefCntPtr<DiagnosticIDs> DiagIDs;
