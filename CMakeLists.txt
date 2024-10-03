@@ -14,6 +14,8 @@ add_definitions(${CLANG_DEFINITIONS})
 
 add_executable(cjit cjit.cpp)
 
+add_subdirectory(optimizer)
+
 # WARNING: Do not link with LLVM libraries here! It will result
 # in duplicates coming from clang-cpp.
 target_link_libraries(cjit ${CMAKE_DL_LIBS} pthread clang-cpp)

@@ -1,16 +1,17 @@
-#include "clang/Basic/TargetInfo.h"
-#include "clang/Basic/TargetOptions.h"
-#include "llvm/Analysis/CGSCCPassManager.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/PassManager.h"
-#include "llvm/Passes/PassBuilder.h"
-#include "llvm/Passes/StandardInstrumentations.h"
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
+#include <llvm/Analysis/CGSCCPassManager.h>
+#include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/StandardInstrumentations.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/TargetParser/Host.h>
 
 #include <clang/Basic/DiagnosticOptions.h>
+#include <clang/Basic/TargetInfo.h>
+#include <clang/Basic/TargetOptions.h>
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Driver/Driver.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -18,12 +19,20 @@
 #include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <clang/Lex/PreprocessorOptions.h>
 
+#include <dlfcn.h>
 #include <iostream>
 
 using namespace llvm;
 using namespace clang;
 
+using OptimizeFuncTy = const char *(const char *);
+
 int main(int argc, char **argv) {
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " /path/to/optimizer\n";
+    return 1;
+  }
+
   // Path to the C file
   std::string InputPath = "simple.c";
 
@@ -87,6 +96,25 @@ int main(int argc, char **argv) {
 
   // Grab the module built by the EmitLLVMOnlyAction
   auto Module = Act->takeModule();
-  Module->print(dbgs(), /*AAW=*/nullptr);
+  std::string ModuleStr;
+  llvm::raw_string_ostream OS(ModuleStr);
+  Module->print(OS, /*AAW=*/nullptr);
+
+  const char *Optimizer = argv[1];
+  void *OptLib = dlopen(Optimizer, RTLD_LOCAL | RTLD_LAZY);
+  if (!OptLib) {
+    std::cerr << "Failed to open optimizer library " << Optimizer << "\n";
+    return 1;
+  }
+
+  OptimizeFuncTy *OptFunc = (OptimizeFuncTy *)dlsym(OptLib, "optimize");
+  if (!OptFunc) {
+    std::cerr << "Failed to find 'optimize' symbol in optimizer library "
+              << Optimizer << "\n";
+    return 1;
+  }
+
+  auto OptimizedModuleStr = std::string(OptFunc(ModuleStr.c_str()));
+  std::cerr << "IR After Optimizations: " << OptimizedModuleStr << "\n";
   return 0;
 }
