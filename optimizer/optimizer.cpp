@@ -5,6 +5,7 @@
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
+#include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/MemoryBufferRef.h>
@@ -19,6 +20,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <string>
 
 using namespace llvm;
 
@@ -29,19 +31,47 @@ using namespace llvm;
 #define ERR_LLVM_INIT 4
 #define ERR_OPT 5
 
+static cl::OptionCategory Cat("optimizer Options");
+
+static cl::opt<std::string> InputFile(cl::Positional, cl::desc("Input IR file"),
+                                      cl::cat(Cat), cl::Optional);
+
+static cl::opt<bool> Verbose("verbose", cl::cat(Cat), cl::init(false));
+
+static cl::alias VerboseAlias("v", cl::desc("alias for --verbose"),
+                              cl::aliasopt(Verbose));
+
+static cl::opt<bool> DumpIR("dump-ir", cl::cat(Cat), cl::init(false));
+
+static cl::opt<bool>
+    DebugPM("debug-pass-manager", cl::Hidden,
+            cl::desc("Print pass management debugging information"),
+            cl::init(false));
+
+struct OptimizerOpts {
+  bool Verbose = false;
+  bool DumpIRToFiles = false;
+  bool DebugPM = false;
+};
+
 class Optimizer {
 public:
+  Optimizer(OptimizerOpts Opts) : Opts(std::move(Opts)) {}
+
   static bool initLLVM();
 
   bool parseIR(std::istream &IS);
 
   bool optimizeIR();
 
-  void printModule();
+  void printModule(llvm::raw_ostream &OS = errs());
 
 private:
   bool createTargetMachine();
 
+  bool dumpIR(StringRef Suffix);
+
+  OptimizerOpts Opts;
   LLVMContext Context;
   std::unique_ptr<MemoryBuffer> InitialIR;
   std::unique_ptr<Module> TheModule;
@@ -82,8 +112,15 @@ bool Optimizer::parseIR(std::istream &IS) {
     return false;
   }
 
-  errs() << "Successfully parsed module\n";
-  printModule();
+  if (Opts.Verbose) {
+    errs() << "Successfully parsed module\n";
+    printModule();
+  }
+
+  if (Opts.DumpIRToFiles)
+    if (!dumpIR("init.ll"))
+      return false;
+
   return true;
 }
 
@@ -101,10 +138,10 @@ bool Optimizer::optimizeIR() {
   PassInstrumentationCallbacks PIC;
   PrintPassOptions PrintPassOpts;
 
-  StandardInstrumentations SI(Context, /*DebugLogging=*/true,
+  StandardInstrumentations SI(Context, /*DebugLogging=*/Opts.DebugPM,
                               /*VerifyEach=*/false, PrintPassOpts);
   SI.registerCallbacks(PIC, &MAM);
-  PassBuilder PB(&*TheTargetMachine, PTO, std::nullopt, &PIC);
+  PassBuilder PB(&*TheTargetMachine, PTO, /*PGOOpt=*/std::nullopt, &PIC);
 
   // Register all the basic analyses with the managers.
   PB.registerModuleAnalyses(MAM);
@@ -124,8 +161,15 @@ bool Optimizer::optimizeIR() {
   }
 
   MPM.run(*TheModule, MAM);
-  errs() << "Successfully ran optimization pipeline on module\n";
-  printModule();
+
+  if (Opts.Verbose) {
+    errs() << "Successfully ran optimization pipeline on module\n";
+    printModule();
+  }
+
+  if (Opts.DumpIRToFiles)
+    if (!dumpIR("opt.ll"))
+      return false;
   return true;
 }
 
@@ -155,26 +199,48 @@ bool Optimizer::createTargetMachine() {
   return true;
 }
 
-void Optimizer::printModule() { TheModule->print(errs(), /*AAW=*/nullptr); }
+void Optimizer::printModule(llvm::raw_ostream &OS) {
+  TheModule->print(OS, /*AAW=*/nullptr);
+}
+
+bool Optimizer::dumpIR(StringRef Suffix) {
+  std::string FileName = (TheModule->getName().str() + "." + Suffix).str();
+  std::error_code EC;
+  llvm::raw_fd_ostream OS(FileName, EC);
+  if (EC) {
+    errs() << "Failed to dump " << Suffix << " to " << FileName << "\n";
+    return false;
+  }
+  printModule(OS);
+  errs() << " -- " << FileName << "\n";
+  return true;
+}
 
 int main(int argc, char **argv) {
-  if (argc > 2) {
-    errs() << "Usage: " << argv[0] << " [ /path/to/ir.ll ]\n";
+  std::string Errors;
+  llvm::raw_string_ostream ErrS(Errors);
+  if (!cl::ParseCommandLineOptions(argc, argv, "", &ErrS)) {
+    errs() << "Failed to parse args: " << Errors << "\n";
     return ERR_INCORRECT_ARGS;
   }
 
-  Optimizer Opt;
+  OptimizerOpts Opts;
+  Opts.DumpIRToFiles = DumpIR;
+  Opts.Verbose = Verbose;
+  Opts.DebugPM = DebugPM;
+
+  Optimizer Opt(Opts);
   if (!Opt.initLLVM()) {
     errs() << "Failed to initialize LLVM. See error messages above.\n";
     return ERR_LLVM_INIT;
   }
 
   bool Parsed = false;
-  if (argc == 2) {
+  if (InputFile.getNumOccurrences()) {
     std::ifstream InputIRFile;
-    InputIRFile.open(argv[1]);
+    InputIRFile.open(InputFile);
     if (!InputIRFile.is_open()) {
-      errs() << "Failed to open " << argv[1] << "\n";
+      errs() << "Failed to open " << InputFile << "\n";
       return ERR_FILE_DOESNT_EXIST;
     }
     Parsed = Opt.parseIR(InputIRFile);
