@@ -40,12 +40,12 @@ static cl::opt<std::string> InputFile(cl::Positional, cl::desc("Input IR file"),
 static cl::opt<bool> Verbose("verbose", cl::cat(Cat), cl::init(false));
 
 static cl::alias VerboseAlias("v", cl::desc("alias for --verbose"),
-                              cl::aliasopt(Verbose));
+                              cl::aliasopt(Verbose), cl::cat(Cat));
 
 static cl::opt<bool> DumpIR("dump-ir", cl::cat(Cat), cl::init(false));
 
 static cl::opt<bool>
-    DebugPM("debug-pass-manager", cl::Hidden,
+    DebugPM("debug-pass-manager", cl::Hidden, cl::cat(Cat),
             cl::desc("Print pass management debugging information"),
             cl::init(false));
 
@@ -194,8 +194,13 @@ bool Optimizer::createTargetMachine() {
   auto Features = "";
 
   TargetOptions TO;
-  auto TheTargetMachine =
+  auto *TM =
       Target->createTargetMachine(TargetTriple, CPU, Features, TO, Reloc::PIC_);
+  if (!TM) {
+    errs() << "Failed to create target machine\n";
+    return false;
+  }
+  TheTargetMachine.reset(TM);
   TheModule->setDataLayout(TheTargetMachine->createDataLayout());
   return true;
 }

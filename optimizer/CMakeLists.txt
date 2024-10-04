@@ -14,7 +14,10 @@ set_target_properties(optimizer
     CXX_VISIBILITY_PRESET hidden
 )
 
+set(NO_RTTI "-fno-rtti")
+
 target_include_directories(optimizer PRIVATE ${LLVM_INCLUDE_DIRS})
 target_compile_definitions(optimizer PRIVATE ${LLVM_DEFINITIONS})
+add_definitions(${NO_RTTI})
 
 target_link_libraries(optimizer PRIVATE LLVM)
