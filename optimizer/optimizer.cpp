@@ -11,6 +11,7 @@
 #include <llvm/Support/MemoryBufferRef.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
@@ -254,6 +255,11 @@ int main(int argc, char **argv) {
     errs() << "Failed to optimize IR\n";
     return ERR_OPT;
   }
+
+  std::string FinalIR;
+  llvm::raw_string_ostream S(FinalIR);
+  Opt.printModule(S);
+  std::cout << FinalIR << "\n";
 
   return SUCCESS;
 }
