@@ -1,10 +1,16 @@
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
+#include <llvm/ADT/StringMap.h>
 #include <llvm/Analysis/CGSCCPassManager.h>
+#include <llvm/ExecutionEngine/Orc/DebugUtils.h>
+#include <llvm/ExecutionEngine/Orc/LLJIT.h>
+#include <llvm/ExecutionEngine/Orc/ObjectTransformLayer.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/PassManager.h>
+#include <llvm/IRReader/IRReader.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
+#include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/TargetParser/Host.h>
@@ -21,15 +27,19 @@
 
 #include <dlfcn.h>
 #include <iostream>
+#include <memory>
 #include <sys/wait.h>
 #include <unistd.h>
 
 using namespace llvm;
+using namespace llvm::orc;
 using namespace clang;
 
 // TODO: Use llvm cl::opt's
 
 using OptimizeFuncTy = bool(const char *, const char **, size_t *);
+
+ExitOnError ExitOnErr;
 
 std::unique_ptr<llvm::Module> parseSourceFile(LLVMContext &Ctx,
                                               const std::string &InputPath) {
@@ -101,16 +111,28 @@ std::unique_ptr<llvm::Module> parseSourceFile(LLVMContext &Ctx,
   return Act->takeModule();
 }
 
+std::unique_ptr<llvm::Module> parseIR(LLVMContext &Ctx, std::string_view IR) {
+  SMDiagnostic Err;
+  auto IRBuf = MemoryBuffer::getMemBuffer(IR);
+  auto TheModule = llvm::parseIR(*IRBuf, Err, Ctx);
+  if (!TheModule) {
+    errs() << "Failed to parse IR: ";
+    Err.print("", errs());
+    return nullptr;
+  }
+  return TheModule;
+}
+
 int main(int argc, char **argv) {
   if (argc != 3) {
     std::cerr << "Usage: " << argv[0] << " /path/to/optimizer /path/to/src.c\n";
     return 1;
   }
 
-  LLVMContext Ctx;
+  auto Ctx = std::make_unique<LLVMContext>();
 
   std::string InputPath = argv[2];
-  auto Module = parseSourceFile(Ctx, InputPath);
+  auto Module = parseSourceFile(*Ctx, InputPath);
   if (!Module)
     return 1;
 
@@ -118,6 +140,7 @@ int main(int argc, char **argv) {
   std::string ModuleStr;
   llvm::raw_string_ostream OS(ModuleStr);
   Module->print(OS, /*AAW=*/nullptr);
+  Module.reset();
   std::cerr << ModuleStr << "\n";
 
   std::string InitialIRFile = "init.ll";
@@ -139,6 +162,8 @@ int main(int argc, char **argv) {
   if (pid < 0) {
     return 1;
   }
+
+  std::unique_ptr<llvm::Module> OptedMod;
   if (pid > 0) {
     // parent
     // close unused ends:
@@ -175,6 +200,11 @@ int main(int argc, char **argv) {
     waitpid(pid, &status, 0);
 
     std::cerr << "Got IR from optimizer:\n" << FromOpt << "\n";
+    OptedMod = parseIR(*Ctx, FromOpt);
+    if (!OptedMod) {
+      std::cerr << "Failed to parse optimizer IR\n";
+      return 1;
+    }
     // TODO: Proper cleanup
   } else {
     // child
@@ -194,5 +224,13 @@ int main(int argc, char **argv) {
       std::cerr << "execvp error: " << strerror(errno) << "\n";
   }
   std::cerr << "Finished cjit\n";
+
+  auto J = ExitOnErr(LLJITBuilder().create());
+  ThreadSafeModule TSM(std::move(OptedMod), std::move(Ctx));
+  ExitOnErr(J->addIRModule(std::move(TSM)));
+  auto FooAddr = ExitOnErr(J->lookup("foo"));
+  int (*Foo)(int) = FooAddr.toPtr<int(int)>();
+  int Result = Foo(42);
+  std::cerr << "foo(42) = " << Result << "\n";
   return 0;
 }
