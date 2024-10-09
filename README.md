@@ -16,7 +16,7 @@ $ git remote add origin https://github.com/llvm/llvm-project.git
 $ git fetch --depth 1 origin a4bf6cd7cfb1a1421ba92bca9d017b49936c55e4
 $ git checkout FETCH_HEAD
 ```
-Занимает 2.2 GB.
+Репо занимает ~2GB
 
 ### Строим LLVM
 ```sh
