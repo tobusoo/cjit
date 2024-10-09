@@ -123,6 +123,8 @@ bool TestRunner::runBenchmark(std::filesystem::path BenchDir) {
   if (!BenchModule)
     return false;
 
+  BenchModule->setTargetTriple(sys::getProcessTriple());
+
   Optimizer Opt(*BenchModule);
   if (!Opt.optimizeIR()) {
     errs() << "Failed to optimize IR\n";
