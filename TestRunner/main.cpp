@@ -52,12 +52,24 @@ static std::vector<fs::path> findBenchmarksToRun() {
              << ", skipping.\n";
       return std::nullopt;
     }
-    errs() << "Found benchmark " << IRName << " in " << Dir << "\n";
+    outs() << "Found benchmark " << IRName << " in " << Dir << "\n";
     return Dir;
   };
   if (Benchmark.getNumOccurrences()) {
+    if (!fs::exists(Benchmark.getValue()) ||
+        !fs::is_directory(Benchmark.getValue())) {
+      errs() << "Benchmark dir " << Benchmark
+             << " doesn't exist or is not a directory\n";
+      return {};
+    }
     if (auto B = FindSingleBenchmark(Benchmark.getValue()))
       return {*B};
+    return {};
+  }
+  if (!fs::exists(BenchmarksDir.getValue()) ||
+      !fs::is_directory(BenchmarksDir.getValue())) {
+    errs() << "Benchmarks dir " << BenchmarksDir
+           << " doesn't exist or is not a directory\n";
     return {};
   }
   std::vector<fs::path> Benchmarks;

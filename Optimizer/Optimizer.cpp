@@ -1,6 +1,10 @@
 #include "Optimizer.h"
+#include "Passes/CustomPass.h"
 
 #include "llvm/ADT/Twine.h"
+#include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm-18/llvm/Transforms/Scalar/LoopPassManager.h>
+#include <llvm-18/llvm/Transforms/Scalar/Sink.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -18,12 +22,17 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Scalar/LoopRotation.h>
 #include <llvm/Transforms/Scalar/SROA.h>
+#include <llvm/Transforms/Scalar/SimplifyCFG.h>
+#include <llvm/Transforms/Scalar/Sink.h>
 
 #include <optional>
 #include <string>
 
 using namespace llvm;
+using namespace opt;
 
 #define SUCCESS 0
 #define ERR_INCORRECT_ARGS 1
@@ -48,7 +57,7 @@ bool Optimizer::optimizeIR() {
   if (!createTargetMachine())
     return false;
 
-  if (DumpIR && !dumpIR("init.ll"))
+  if (DumpIR && !dumpIR("init"))
     return false;
 
   PipelineTuningOptions PTO;
@@ -80,9 +89,11 @@ bool Optimizer::optimizeIR() {
   {
     FunctionPassManager FPM;
     FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
-    FPM.addPass(InstCombinePass());
+    FPM.addPass(SinkingPass());
     MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
   }
+
+  MPM.addPass(VerifierPass());
 
   if (Verbose)
     errs() << "Running optimization pipeline on module...\n";
@@ -92,7 +103,7 @@ bool Optimizer::optimizeIR() {
   if (Verbose)
     errs() << "Successfully ran optimization pipeline on module\n";
 
-  if (DumpIR && !dumpIR("opt.ll"))
+  if (DumpIR && !dumpIR("opt"))
     return false;
   return true;
 }

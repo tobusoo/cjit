@@ -5,7 +5,10 @@ set (CMAKE_CXX_STANDARD 17)
 
 find_package(LLVM REQUIRED CONFIG)
 
-add_library(optimizer SHARED Optimizer.cpp)
+add_library(optimizer SHARED
+    Optimizer.cpp
+    Passes/CustomPass.cpp
+)
 
 set(NO_RTTI "-fno-rtti")
 

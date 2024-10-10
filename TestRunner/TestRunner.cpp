@@ -1,4 +1,5 @@
 #include "TestRunner.h"
+#include "Benchmarks/Sink/SinkBenchmark.h"
 
 #include <llvm/ExecutionEngine/Orc/DebugUtils.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
@@ -23,6 +24,7 @@
 using namespace llvm;
 using namespace llvm::orc;
 using namespace tr;
+using namespace opt;
 namespace fs = std::filesystem;
 
 extern cl::OptionCategory TestRunnerCat;
@@ -71,38 +73,22 @@ static std::string dumpModuleToString(std::unique_ptr<Module> Mod) {
   return ModuleStr;
 }
 
-template <typename RetTy, typename... ArgsTys> class FunctionExecutor {
-private:
-  using FuncTy = RetTy(ArgsTys...);
-
-public:
-  FunctionExecutor(std::unique_ptr<Module> Module,
-                   std::unique_ptr<LLVMContext> Ctx, LLJIT &JIT,
-                   ExitOnError &ExitOnErr, StringRef FuncName)
-      : JIT(JIT), ExitOnErr(ExitOnErr) {
-    ThreadSafeModule TSM(std::move(Module), std::move(Ctx));
-    ExitOnErr(JIT.addIRModule(std::move(TSM)));
-    auto FuncAddr = ExitOnErr(JIT.lookup(FuncName));
-    Func = FuncAddr.toPtr<FuncTy>();
-  }
-
-  template <typename... ActualArgsTys> RetTy execute(ActualArgsTys &&...Args);
-
-private:
-  LLJIT &JIT;
-  ExitOnError &ExitOnErr;
-  FuncTy *Func;
-};
-
-template <typename RetTy, typename... ArgsTys>
-template <typename... ActualArgsTys>
-RetTy FunctionExecutor<RetTy, ArgsTys...>::execute(ActualArgsTys &&...Args) {
-  return Func(std::forward<ActualArgsTys>(Args)...);
-}
-
 TestRunner::TestRunner(std::vector<fs::path> &&Benchmarks)
     : Benchmarks(std::move(Benchmarks)),
-      JIT(ExitOnErr(LLJITBuilder().create())) {}
+      JIT(ExitOnErr(LLJITBuilder().create())) {
+  initRunners();
+}
+
+void TestRunner::initRunners() {
+  for (auto &B : Benchmarks) {
+    auto BenchName = B.filename().string();
+    if (BenchName == "sink") {
+      Runners["sink"] = std::make_unique<SinkBenchmark>(*JIT);
+      continue;
+    }
+    errs() << "Runner not found for benchmark '" << BenchName << "'\n";
+  }
+}
 
 bool TestRunner::run() {
   for (auto B : Benchmarks)
@@ -115,68 +101,41 @@ bool TestRunner::runBenchmark(std::filesystem::path BenchDir) {
   auto Context = std::make_unique<LLVMContext>();
 
   auto BenchName = BenchDir.filename().string();
+
+  auto It = Runners.find(BenchName);
+  if (It == Runners.end()) {
+    errs() << "Don't know how to run benchmark '" << BenchName << "'...\n";
+    return false;
+  }
+
+  auto &Runner = *It->getValue();
+
   auto IRName = BenchName + ".ll";
   auto IRPath = BenchDir / IRName;
   assert(fs::exists(IRPath) && "IR must exist");
 
-  errs() << "Preparing to run benchmark '" << BenchName << "'\n";
+  outs() << "Preparing to run benchmark '" << BenchName << "'...\n";
   auto BenchModule = parseIRFromFile(*Context, IRPath);
   if (!BenchModule)
     return false;
 
   BenchModule->setTargetTriple(sys::getProcessTriple());
 
+  outs() << "Optimizing '" << BenchName << "'...\n";
   Optimizer Opt(*BenchModule);
   if (!Opt.optimizeIR()) {
     errs() << "Failed to optimize IR\n";
     return false;
   }
 
-  FunctionExecutor<double, int *, unsigned> Exec(
-      std::move(BenchModule), std::move(Context), *JIT, ExitOnErr, "test");
+  Runner.init(std::move(BenchModule), std::move(Context));
 
-  auto RunIter = [&](unsigned IterNum) {
-    errs() << "Iteration #" << IterNum << ": ";
-    using ClockTy = std::chrono::high_resolution_clock;
-    auto TimeLimit = std::chrono::seconds(IterationDuration);
-    auto TimeLimitS =
-        std::chrono::duration_cast<std::chrono::seconds>(TimeLimit).count();
-
-    std::size_t NumTimesCalled = 0;
-    auto Start = ClockTy::now();
-
-    int arr[] = {5,  15, 3, 20, 8,  12, 25, 30, 2,  7,
-                 18, 14, 9, 11, 16, 22, 4,  27, 19, 6}; // Larger input array
-    int n = 20; // Number of elements in the array
-
-    if (IterNum % 2)
-      for (int i = 0; i < n; i++)
-        arr[i] *= -1;
-
-    while (true) {
-      NumTimesCalled++;
-      double Result = Exec.execute(arr, n);
-      // if (Result != 12502) {
-      //   errs() << "Got wrong result at iteration #" << NumTimesCalled
-      //          << ". Expected 85, got " << Result << "\n";
-      //   return 1;
-      // }
-      if (ClockTy::now() - Start >= TimeLimit)
-        break;
-    }
-    double Score = static_cast<double>(NumTimesCalled) / TimeLimitS;
-    outs() << format("%15.1lf", Score) << " ops/s\n";
-    return Score;
-  };
-
-  outs() << "Executing your code for " << Iterations << " iterations, each for "
-         << IterationDuration << " seconds.\n";
-
-  std::vector<double> Scores;
-  for (unsigned I = 0; I < Iterations; ++I)
-    Scores.push_back(RunIter(I));
-  double Avg =
-      std::accumulate(Scores.begin(), Scores.end(), 0.0) / Scores.size();
-  outs() << "Average score: " << format("%15.1lf", Avg) << " ops/s.\n";
+  outs() << "Running '" << BenchName << "':\n";
+  auto ScoreOpt = Runner.run(Iterations, IterationDuration);
+  if (!ScoreOpt) {
+    errs() << "Benchmark run failed.\n";
+    return false;
+  }
+  outs() << "Average score: " << format("%15.1lf", *ScoreOpt) << " ops/s\n";
   return true;
 }

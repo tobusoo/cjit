@@ -6,5 +6,5 @@ set (CMAKE_CXX_STANDARD 17)
 
 find_package(LLVM REQUIRED CONFIG)
 
-add_subdirectory(optimizer)
-add_subdirectory(test-runner)
+add_subdirectory(Optimizer)
+add_subdirectory(TestRunner)
