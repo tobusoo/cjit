@@ -4,8 +4,7 @@ LLVM-based JIT для C/C++.
 
 В папке `./TestRunner` - программа для запуска бенчмарок.  
 Она читает поданные ей исходники бенчмарки в формате LLVM IR, парсит их, оптимизирует и исполняет.  
-Во время исполнения замеряет, сколько раз выполнился скомпилированный код.  
-Во время выполнения выводится отчёт:
+Во время исполнения замеряет, сколько раз выполнился скомпилированный код и выводит отчёт:
 
 ```txt
 $ ./build/TestRunner/test-runner --benchmarks-dir=Benchmarks/
@@ -66,47 +65,57 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     Откройте SVG в браузере - перед вами CFG функции test.  
     Поймите, чему соответствуют цвета блоков и почему они разные.
 
-5. - Добавьте оптимизационных пассов в пайплайн:
-        Найдите в [Optimizer/Optimizer.cpp](Optimizer/Optimizer.cpp) построение пайплайна (`ModulePassManager MPM`).
-        Добавьте `SinkingPass` пасс в пайплайн:
-        ```cpp
-        /// TODO: Extend pipeline here.
-        ModulePassManager MPM;
-        MPM.addPass(VerifierPass());
+5. Добавьте оптимизационных пассов в пайплайн:
+    Найдите в [Optimizer/Optimizer.cpp](Optimizer/Optimizer.cpp) построение пайплайна (`ModulePassManager MPM`).
+    Добавьте `SinkingPass` пасс в пайплайн:
+    ```cpp
+    /// TODO: Extend pipeline here.
+    ModulePassManager MPM;
+    MPM.addPass(VerifierPass());
 
-        {
-            FunctionPassManager FPM;
-            FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
-            FPM.addPass(SinkingPass()); // NOTE: Added this line
-            MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
-        }
-        ```
-   - Постройте TestRunner (`cd build && ninja`), запустите и отследите изменения результатов:
-        ```
-        $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink
-        Found benchmark sink.ll in Benchmarks/sink
-        Preparing to run benchmark 'sink'...
-        Optimizing 'sink'...
-        Running 'sink':
-        Iteration #1:         88086.0 ops/s
-        ```
-   - Запустите test-runner ещё раз с опцией `-dump-ir`:
-        ```sh
-        $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -dump-ir
-        ```
-        Рядом с `sink.ll` появятся `sink.ll.init` и `sink.ll.opt` файлы - это снепшоты IR-а до и после *всех ваших* оптимизаций.
-   - Постройте и сравните CFG для обоих файлов. Объясните, что сделал SinkingPass и почему от него наблюдается такой большой прирост.  
+    {
+        FunctionPassManager FPM;
+        FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
+        FPM.addPass(SinkingPass()); // NOTE: Added this line
+        MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
+    }
+    ```
 
-   - В начале пайплайна стоит пасс SROA. Он должен стоять в начале пайплайна из-за особенностей парсинга C/C++ clang-ом.  
-        `sink.ll.init` - IR до работы SROA. Чтобы работа, проделанная SinkingPass, стала более явной, распечатайте IR непосредственно до него и после:
-        ```sh
-        $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-before=sinking -print-module-scope 2> before-sinking.ll
-        $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after=sinking -print-module-scope 2> after-sinking.ll
-        ```
-        В файлах `before-sinking.ll` и `after-sinking.ll` должен появиться IR до и после SinkingPass.
-        Постройте для них CFG и сравните.
+    Постройте TestRunner (`cd build && ninja`), запустите и отследите изменения результатов:
+    ```
+    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink
+    Found benchmark sink.ll in Benchmarks/sink
+    Preparing to run benchmark 'sink'...
+    Optimizing 'sink'...
+    Running 'sink':
+    Iteration #1:         88086.0 ops/s
+    ```
 
-6. Попробуйте написать свой LLVM Pass и добавить его в пайплайн. 
+    Запустите test-runner ещё раз с опцией `-dump-ir`:
+    ```sh
+    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -dump-ir
+    ```
+
+    Рядом с `sink.ll` появятся `sink.ll.init` и `sink.ll.opt` файлы - это снепшоты IR-а до и после *всех ваших* оптимизаций.  
+    Постройте и сравните CFG для обоих файлов.  
+    Объясните, что сделал SinkingPass и почему от него наблюдается такой большой прирост.  
+ 
+    В начале пайплайна стоит пасс SROA.  
+    Он должен стоять в начале пайплайна из-за особенностей парсинга C/C++ clang-ом.  
+
+    `sink.ll.init` - IR до работы SROA.  
+    Чтобы работа, проделанная SinkingPass, стала более явной, распечатайте IR непосредственно до него и после:
+    ```sh
+    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-before='sinking' -print-module-scope 2> before-sinking.ll
+    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after='sinking' -print-module-scope 2> after-sinking.ll
+    ```
+
+    `'sinking'` - название пасса. Посмотреть список (вместе с названиями) всех пассов из LLVM можно в файле `llvm-project/llvm/lib/Passes/PassRegistry.def`.
+
+    В файлах `before-sinking.ll` и `after-sinking.ll` должен появиться IR до и после SinkingPass.  
+    Постройте для них CFG и сравните.
+
+6. Попробуйте написать свой LLVM Pass и добавить его в пайплайн.  
     В [Optimizer/Passes](Optimizer/Passes) есть dummy пример пасса - CustomPass.  
     Либо скопируйте его, либо прямо в нём распечатайте сообщение из метода CustomPass::run:
     ```cpp
