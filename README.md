@@ -66,7 +66,7 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     Поймите, чему соответствуют цвета блоков и почему они разные.
 
 5. Добавьте оптимизационных пассов в пайплайн:
-    Найдите в [Optimizer/Optimizer.cpp](Optimizer/Optimizer.cpp) построение пайплайна (`ModulePassManager MPM`).
+    Найдите в [Optimizer/Optimizer.cpp](Optimizer/Optimizer.cpp) построение пайплайна (`ModulePassManager MPM`).  
     Добавьте `SinkingPass` пасс в пайплайн:
     ```cpp
     /// TODO: Extend pipeline here.
