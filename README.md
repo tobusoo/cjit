@@ -121,7 +121,7 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after-all 2>&1 | grep 'IR Dump After'
     ```
     В выводе будет список всех пассов, которые запускались на бенчмарке.  
-    Объясните, откуда они взялись, если в Optimizer.cpp они нигде не добавляются?
+    Объясните, откуда они взялись, если в [Optimizer/Optimizer.cpp](Optimizer/Optimizer.cpp) они нигде не добавляются?
 
 6. Попробуйте написать свой LLVM Pass и добавить его в пайплайн.  
     В [Optimizer/Passes](Optimizer/Passes) есть dummy пример пасса - CustomPass.  

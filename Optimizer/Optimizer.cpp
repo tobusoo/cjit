@@ -2,9 +2,10 @@
 #include "Passes/CustomPass.h"
 
 #include "llvm/ADT/Twine.h"
-#include <llvm-18/llvm/Transforms/InstCombine/InstCombine.h>
-#include <llvm-18/llvm/Transforms/Scalar/LoopPassManager.h>
-#include <llvm-18/llvm/Transforms/Scalar/Sink.h>
+#include <llvm/TargetParser/Host.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar/LoopPassManager.h>
+#include <llvm/Transforms/Scalar/Sink.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -89,7 +90,6 @@ bool Optimizer::optimizeIR() {
   {
     FunctionPassManager FPM;
     FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
-    FPM.addPass(SinkingPass());
     MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
   }
 
