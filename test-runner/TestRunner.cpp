@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <memory>
+#include <numeric>
 
 using namespace llvm;
 using namespace llvm::orc;
