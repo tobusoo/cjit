@@ -17,4 +17,4 @@ public:
 };
 } // namespace tr
 
-#endif // TESTRUNNER_BENCHMARKS_BENCHRUNNER_H
+#endif // TESTRUNNER_BENCHMARKS_SINKBENCHMARK_H

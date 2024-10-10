@@ -12,4 +12,4 @@ struct CustomPass : llvm::PassInfoMixin<CustomPass> {
 };
 } // namespace opt
 
-#endif // OPTIMIZER_OPTOPTIMIZER_PASSES_CUSTOMPASS_HIMIZER_H
+#endif // OPTIMIZER_PASSES_CUSTOMPASS_H
