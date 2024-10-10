@@ -115,6 +115,14 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     В файлах `before-sinking.ll` и `after-sinking.ll` должен появиться IR до и после SinkingPass.  
     Постройте для них CFG и сравните.
 
+    *Доп задача*:
+    Запустите
+    ```sh
+    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after-all 2>&1 | grep 'IR Dump After'
+    ```
+    В выводе будет список всех пассов, которые запускались на бенчмарке.  
+    Объясните, откуда они взялись, если в Optimizer.cpp они нигде не добавляются?
+
 6. Попробуйте написать свой LLVM Pass и добавить его в пайплайн.  
     В [Optimizer/Passes](Optimizer/Passes) есть dummy пример пасса - CustomPass.  
     Либо скопируйте его, либо прямо в нём распечатайте сообщение из метода CustomPass::run:
