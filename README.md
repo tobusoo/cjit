@@ -115,7 +115,10 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     В файлах `before-sinking.ll` и `after-sinking.ll` должен появиться IR до и после SinkingPass.  
     Постройте для них CFG и сравните.
 
-    *Доп задача*:
+    *Доп задача 1*:
+    Попробуйте добавить другие пассы (например, GVN, InstCombine) и пронаблюдать изменения в IR и в скорах.
+
+    *Доп задача 2*:
     Запустите
     ```sh
     $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after-all 2>&1 | grep 'IR Dump After'
