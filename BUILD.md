@@ -4,7 +4,7 @@
 
 На Ubuntu:
 ```sh
-$ sudo apt install build-essential git cmake ninja lld
+$ sudo apt install build-essential git cmake ninja-build lld
 ```
 
 ### Клонируем LLVM (версия [19.1.0](https://github.com/llvm/llvm-project/commit/a4bf6cd7cfb1a1421ba92bca9d017b49936c55e4))
