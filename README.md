@@ -104,7 +104,7 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     Он должен стоять в начале пайплайна из-за особенностей парсинга C/C++ clang-ом.  
 
     `sink.ll.init` - IR до работы SROA.  
-    Чтобы работа, проделанная SinkingPass, стала более явной, распечатайте IR непосредственно до него и после:
+    Чтобы увидеть только изменения от SinkingPass, распечатайте IR непосредственно до и после него:
     ```sh
     $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-before='sinking' -print-module-scope 2> before-sinking.ll
     $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after='sinking' -print-module-scope 2> after-sinking.ll
@@ -116,7 +116,7 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     Постройте для них CFG и сравните.
 
     *Доп задача 1*:
-    Попробуйте добавить другие пассы (например, GVN, InstCombine) и пронаблюдать изменения в IR и в скорах.
+    Попробуйте добавить другие пассы (например, GVN, InstCombine) и пронаблюдать изменения в IR и в производительности.
 
     *Доп задача 2*:
     Запустите
@@ -124,7 +124,7 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after-all 2>&1 | grep 'IR Dump After'
     ```
     В выводе будет список всех пассов, которые запускались на бенчмарке.  
-    Объясните, откуда они взялись, если в [Optimizer/Optimizer.cpp](Optimizer/Optimizer.cpp) они нигде не добавляются?
+    Объясните, откуда они взялись, если в [Optimizer/Optimizer.cpp](Optimizer/Optimizer.cpp) они нигде не добавляются.
 
 6. Попробуйте написать свой LLVM Pass и добавить его в пайплайн.  
     В [Optimizer/Passes](Optimizer/Passes) есть dummy пример пасса - CustomPass.  
@@ -132,4 +132,4 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     ```cpp
       errs() << " -- CustomPass::run(" << F.getName() << ")\n";
     ```
-    Добавьте свой пасс в пайплайн, запустите бенчмарк и убедиться, что ваш пасс запускается.
+    Добавьте свой пасс в пайплайн, запустите бенчмарк и убедитесь, что ваш пасс запускается.
