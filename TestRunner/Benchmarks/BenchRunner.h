@@ -22,6 +22,8 @@ public:
 
   virtual std::optional<double> run(unsigned NumIters, unsigned IterLength) = 0;
 
+  virtual ~BenchRunner() = default;
+
 protected:
   double runIter(unsigned IterNum, unsigned Duration,
                  llvm::function_ref<bool()> IterJob);
@@ -43,7 +45,7 @@ public:
     llvm::orc::ThreadSafeModule TSM(std::move(Module), std::move(Ctx));
     ExitOnErr(JIT.addIRModule(std::move(TSM)));
     auto FuncAddr = ExitOnErr(JIT.lookup(FuncName));
-    Func = FuncAddr.toPtr<FuncTy>();
+    Func = FuncAddr.template toPtr<FuncTy>();
   }
 
   template <typename... ActualArgsTys> RetTy execute(ActualArgsTys &&...Args) {

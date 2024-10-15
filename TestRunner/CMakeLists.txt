@@ -12,6 +12,10 @@ add_executable(test-runner
     Benchmarks/Sink/SinkBenchmark.cpp
 )
 
+set(NO_RTTI "-fno-rtti")
+
+add_definitions(${NO_RTTI})
+
 target_include_directories(test-runner
     PRIVATE ${LLVM_INCLUDE_DIRS}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Optimizer
