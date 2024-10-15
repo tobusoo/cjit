@@ -51,7 +51,7 @@ $ ninja
 
 ```sh
 $ cmake -S . -B build -G Ninja \
-    -DLLVM_DIR=/path/to/llvm-project/build \
+    -DLLVM_DIR=/path/to/llvm-project/build/lib/cmake/llvm \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
 $ cd build
 $ ninja
