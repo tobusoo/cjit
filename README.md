@@ -106,13 +106,13 @@ clang -S -emit-llvm -O0 -Xclang -disable-O0-optnone sink.c
     `sink.ll.init` - IR до работы SROA.  
     Чтобы увидеть только изменения от SinkingPass, распечатайте IR непосредственно до и после него:
     ```sh
-    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-before='sinking' -print-module-scope 2> before-sinking.ll
-    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after='sinking' -print-module-scope 2> after-sinking.ll
+    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-before='sink' -print-module-scope 2> before-sink.ll
+    $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sink -print-after='sink' -print-module-scope 2> after-sink.ll
     ```
 
-    `'sinking'` - название пасса. Посмотреть список (вместе с названиями) всех пассов из LLVM можно в файле `llvm-project/llvm/lib/Passes/PassRegistry.def`.
+    `'sink'` - название пасса. Посмотреть список всех пассов вместе с названиями из LLVM можно в файле `llvm-project/llvm/lib/Passes/PassRegistry.def`.
 
-    В файлах `before-sinking.ll` и `after-sinking.ll` должен появиться IR до и после SinkingPass.  
+    В файлах `before-sink.ll` и `after-sink.ll` должен появиться IR до и после SinkingPass.  
     Постройте для них CFG и сравните.
 
     *Доп задача 1*:
