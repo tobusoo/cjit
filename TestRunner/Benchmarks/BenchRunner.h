@@ -1,12 +1,14 @@
 #ifndef TESTRUNNER_BENCHMARKS_BENCHRUNNER_H
 #define TESTRUNNER_BENCHMARKS_BENCHRUNNER_H
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ExecutionEngine/Orc/Core.h"
+#include "llvm/Support/raw_ostream.h"
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/ExecutionEngine/Orc/ThreadSafeModule.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-#include <filesystem>
 #include <optional>
 
 namespace tr {
@@ -22,7 +24,12 @@ public:
 
   virtual std::optional<double> run(unsigned NumIters, unsigned IterLength) = 0;
 
-  virtual ~BenchRunner() = default;
+  virtual ~BenchRunner() {
+    if (JIT.getMainJITDylib().clear()) {
+      llvm::errs() << "Failed to clear dylib\n";
+      std::abort();
+    }
+  }
 
 protected:
   double runIter(unsigned IterNum, unsigned Duration,
@@ -33,29 +40,24 @@ protected:
   llvm::orc::LLJIT &JIT;
 };
 
-template <typename RetTy, typename... ArgsTys> class FunctionExecutor {
-private:
-  using FuncTy = RetTy(ArgsTys...);
-
+class FunctionExecutor {
 public:
   FunctionExecutor(std::unique_ptr<llvm::Module> Module,
                    std::unique_ptr<llvm::LLVMContext> Ctx,
-                   llvm::orc::LLJIT &JIT, llvm::StringRef FuncName)
+                   llvm::orc::LLJIT &JIT)
       : JIT(JIT) {
     llvm::orc::ThreadSafeModule TSM(std::move(Module), std::move(Ctx));
     ExitOnErr(JIT.addIRModule(std::move(TSM)));
-    auto FuncAddr = ExitOnErr(JIT.lookup(FuncName));
-    Func = FuncAddr.template toPtr<FuncTy>();
   }
 
-  template <typename... ActualArgsTys> RetTy execute(ActualArgsTys &&...Args) {
-    return Func(std::forward<ActualArgsTys>(Args)...);
+  template <typename FuncTy> auto lookupFunc(llvm::StringRef Name) -> FuncTy * {
+    auto FuncAddr = ExitOnErr(JIT.lookup(Name));
+    return FuncAddr.template toPtr<FuncTy>();
   }
 
 private:
   llvm::orc::LLJIT &JIT;
   llvm::ExitOnError ExitOnErr;
-  FuncTy *Func;
 };
 } // namespace tr
 

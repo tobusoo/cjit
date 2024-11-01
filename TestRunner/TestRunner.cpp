@@ -1,5 +1,12 @@
 #include "TestRunner.h"
+#include "Benchmarks/BenchRunner.h"
+#include "Benchmarks/FloatMM/FloatMMBenchmark.h"
+#include "Benchmarks/IntMM/IntMMBenchmark.h"
+#include "Benchmarks/PI/PIBenchmark.h"
+#include "Benchmarks/QSort/QSortBenchmark.h"
 #include "Benchmarks/Sink/SinkBenchmark.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/StringSwitch.h"
 
 #include <llvm/ExecutionEngine/Orc/DebugUtils.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
@@ -75,19 +82,20 @@ static std::string dumpModuleToString(std::unique_ptr<Module> Mod) {
 
 TestRunner::TestRunner(std::vector<fs::path> &&Benchmarks)
     : Benchmarks(std::move(Benchmarks)),
-      JIT(ExitOnErr(LLJITBuilder().create())) {
-  initRunners();
-}
+      JIT(ExitOnErr(LLJITBuilder().create())) {}
 
-void TestRunner::initRunners() {
-  for (auto &B : Benchmarks) {
-    auto BenchName = B.filename().string();
-    if (BenchName == "sink") {
-      Runners["sink"] = std::make_unique<SinkBenchmark>(*JIT);
-      continue;
-    }
-    errs() << "Runner not found for benchmark '" << BenchName << "'\n";
-  }
+std::unique_ptr<BenchRunner> TestRunner::getBenchRunner(StringRef Name) {
+  if (Name == "sink")
+    return std::make_unique<SinkBenchmark>(*JIT);
+  if (Name == "pi")
+    return std::make_unique<PIBenchmark>(*JIT);
+  if (Name == "qsort")
+    return std::make_unique<QSortBenchmark>(*JIT);
+  if (Name == "floatmm")
+    return std::make_unique<FloatMMBenchmark>(*JIT);
+  if (Name == "intmm")
+    return std::make_unique<IntMMBenchmark>(*JIT);
+  return nullptr;
 }
 
 bool TestRunner::run() {
@@ -102,13 +110,11 @@ bool TestRunner::runBenchmark(std::filesystem::path BenchDir) {
 
   auto BenchName = BenchDir.filename().string();
 
-  auto It = Runners.find(BenchName);
-  if (It == Runners.end()) {
-    errs() << "Don't know how to run benchmark '" << BenchName << "'...\n";
+  auto Runner = getBenchRunner(BenchName);
+  if (!Runner) {
+    errs() << "Runner not found for benchmark '" << BenchName << "'\n";
     return false;
   }
-
-  auto &Runner = *It->getValue();
 
   auto IRName = BenchName + ".ll";
   auto IRPath = BenchDir / IRName;
@@ -128,10 +134,10 @@ bool TestRunner::runBenchmark(std::filesystem::path BenchDir) {
     return false;
   }
 
-  Runner.init(std::move(BenchModule), std::move(Context));
+  Runner->init(std::move(BenchModule), std::move(Context));
 
   outs() << "Running '" << BenchName << "':\n";
-  auto ScoreOpt = Runner.run(Iterations, IterationDuration);
+  auto ScoreOpt = Runner->run(Iterations, IterationDuration);
   if (!ScoreOpt) {
     errs() << "Benchmark run failed.\n";
     return false;

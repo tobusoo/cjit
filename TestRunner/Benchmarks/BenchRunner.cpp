@@ -1,4 +1,5 @@
 #include "BenchRunner.h"
+#include <chrono>
 
 using namespace llvm;
 using namespace tr;
@@ -22,7 +23,11 @@ double BenchRunner::runIter(unsigned IterNum, unsigned Duration,
       break;
   }
 
-  double Score = static_cast<double>(NumTimesCalled) / TimeLimitS;
+  auto ElapsedTime = ClockTy::now() - Start;
+  auto ElapsedTimeMS =
+      std::chrono::duration_cast<std::chrono::milliseconds>(ElapsedTime)
+          .count();
+  double Score = static_cast<double>(NumTimesCalled) * 1000 / ElapsedTimeMS;
   outs() << format("%15.1lf", Score) << " ops/s\n";
   return Score;
 }

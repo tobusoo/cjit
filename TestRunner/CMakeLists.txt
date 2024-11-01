@@ -9,7 +9,11 @@ add_executable(test-runner
     main.cpp
     TestRunner.cpp
     Benchmarks/BenchRunner.cpp
+    Benchmarks/PI/PIBenchmark.cpp
     Benchmarks/Sink/SinkBenchmark.cpp
+    Benchmarks/QSort/QSortBenchmark.cpp
+    Benchmarks/IntMM/IntMMBenchmark.cpp
+    Benchmarks/FloatMM/FloatMMBenchmark.cpp
 )
 
 set(NO_RTTI "-fno-rtti")

@@ -2,10 +2,12 @@
 #include "Passes/CustomPass.h"
 
 #include "llvm/ADT/Twine.h"
-#include <llvm/TargetParser/Host.h>
-#include <llvm/Transforms/InstCombine/InstCombine.h>
-#include <llvm/Transforms/Scalar/LoopPassManager.h>
-#include <llvm/Transforms/Scalar/Sink.h>
+#include "llvm/Transforms/IPO/ModuleInliner.h"
+#include "llvm/Transforms/Scalar/EarlyCSE.h"
+#include "llvm/Transforms/Scalar/IndVarSimplify.h"
+#include "llvm/Transforms/Scalar/LICM.h"
+#include "llvm/Transforms/Scalar/LoopUnrollPass.h"
+#include "llvm/Transforms/Vectorize/LoopVectorize.h"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -24,6 +26,8 @@
 #include <llvm/TargetParser/Host.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 #include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Scalar/LICM.h>
+#include <llvm/Transforms/Scalar/LoopPassManager.h>
 #include <llvm/Transforms/Scalar/LoopRotation.h>
 #include <llvm/Transforms/Scalar/SROA.h>
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
@@ -90,6 +94,28 @@ bool Optimizer::optimizeIR() {
   {
     FunctionPassManager FPM;
     FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
+    FPM.addPass(InstCombinePass());
+    MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
+  }
+  MPM.addPass(ModuleInlinerPass());
+  {
+    FunctionPassManager FPM;
+    FPM.addPass(EarlyCSEPass());
+    FPM.addPass(GVNPass());
+    FPM.addPass(SinkingPass());
+    FPM.addPass(SimplifyCFGPass());
+    FPM.addPass(createFunctionToLoopPassAdaptor(LoopRotatePass()));
+    FPM.addPass(createFunctionToLoopPassAdaptor(IndVarSimplifyPass()));
+    MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
+  }
+  MPM.addPass(NoOpModulePass());
+  {
+    FunctionPassManager FPM;
+    FPM.addPass(createFunctionToLoopPassAdaptor(LICMPass(LICMOptions()), true));
+    FPM.addPass(InstCombinePass());
+    FPM.addPass(LoopVectorizePass());
+    FPM.addPass(InstCombinePass());
+    FPM.addPass(SimplifyCFGPass());
     MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
   }
 
@@ -124,8 +150,18 @@ bool Optimizer::createTargetMachine() {
   }
 
   /// TODO: Figure out CPU and features for the current processor.
-  auto CPU = "generic";
-  auto Features = "";
+  auto CPU = llvm::sys::getHostCPUName();
+  std::string Features = "";
+  auto FeatMap = sys::getHostCPUFeatures();
+  for (auto It = FeatMap.begin(), EndIt = FeatMap.end(); It != EndIt; ++It) {
+    if (It->getValue())
+      Features += "+";
+    else
+      Features += "-";
+    Features += It->getKey();
+    if (It != EndIt)
+      Features += ",";
+  }
 
   TargetOptions TO;
   auto *TM =
@@ -135,6 +171,16 @@ bool Optimizer::createTargetMachine() {
     return false;
   }
   TheTargetMachine.reset(TM);
+  DL = TheTargetMachine->createDataLayout();
+  TheModule.setTargetTriple(TheTargetMachine->getTargetTriple().str());
+  TheModule.setDataLayout(*DL);
+  Ctx.setDefaultTargetCPU(CPU);
+  Ctx.setDefaultTargetFeatures(Features);
+  for (auto &F : TheModule) {
+    F.addFnAttr("target-cpu", CPU);
+    if (!Features.empty())
+      F.addFnAttr("target-features", Features);
+  }
   return true;
 }
 

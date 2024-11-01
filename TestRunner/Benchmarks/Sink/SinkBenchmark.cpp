@@ -30,21 +30,22 @@ static double expectedResult(const llvm::ArrayRef<int> Input) {
   return Res;
 }
 
-bool DoubleEq(double X, double Y, double Eps = 1e-9) {
+static bool DoubleEq(double X, double Y, double Eps = 1e-9) {
   return fabs(X - Y) < Eps;
 }
 
 std::optional<double> SinkBenchmark::run(unsigned NumIters,
                                          unsigned IterLength) {
-  FunctionExecutor<double, int *, unsigned> Exec(std::move(TheModule),
-                                                 std::move(Ctx), JIT, "test");
+  FunctionExecutor Exec(std::move(TheModule), std::move(Ctx), JIT);
+
+  auto Test = Exec.lookupFunc<double(int *, unsigned)>("test");
 
   std::vector<int> Input = generateInput(10000);
   double ExpectedRes = expectedResult(Input);
   bool GotUnexpectedRes = false;
 
   auto IterJob = [&]() {
-    double Res = Exec.execute(Input.data(), Input.size());
+    double Res = Test(Input.data(), Input.size());
     if (!DoubleEq(Res, ExpectedRes)) {
       errs() << "Got unexpected result: expected " << ExpectedRes << ", got "
              << Res << "\n";

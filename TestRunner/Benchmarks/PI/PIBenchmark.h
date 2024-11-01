@@ -1,7 +1,6 @@
-#ifndef TESTRUNNER_BENCHMARKS_SINKBENCHMARK_H
-#define TESTRUNNER_BENCHMARKS_SINKBENCHMARK_H
+#ifndef TESTRUNNER_BENCHMARKS_PIBENCHMARK_H
+#define TESTRUNNER_BENCHMARKS_PIBENCHMARK_H
 
-#include <cstdlib>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -10,12 +9,12 @@
 #include "../BenchRunner.h"
 
 namespace tr {
-class SinkBenchmark : public BenchRunner {
+class PIBenchmark : public BenchRunner {
 public:
-  SinkBenchmark(llvm::orc::LLJIT &JIT) : BenchRunner(JIT) {}
+  PIBenchmark(llvm::orc::LLJIT &JIT) : BenchRunner(JIT) {}
 
   std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
 };
 } // namespace tr
 
-#endif // TESTRUNNER_BENCHMARKS_SINKBENCHMARK_H
+#endif // TESTRUNNER_BENCHMARKS_PIBENCHMARK_H
