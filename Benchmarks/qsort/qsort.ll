@@ -4,48 +4,48 @@ source_filename = "qsort.c"
 %struct.element = type { i32, i32 }
 %struct.complex = type { float, float }
 
-@seed = global i64 0, align 8
-@biggest = global i32 0, align 4
-@littlest = global i32 0, align 4
-@sortlist = global [5001 x i32] zeroinitializer, align 4
-@value = global float 0.000000e+00, align 4
-@fixed = global float 0.000000e+00, align 4
-@floated = global float 0.000000e+00, align 4
-@permarray = global [11 x i32] zeroinitializer, align 4
-@pctr = global i32 0, align 4
-@tree = global ptr null, align 8
-@stack = global [4 x i32] zeroinitializer, align 4
-@cellspace = global [19 x %struct.element] zeroinitializer, align 4
-@freelist = global i32 0, align 4
-@movesdone = global i32 0, align 4
-@ima = global [41 x [41 x i32]] zeroinitializer, align 4
-@imb = global [41 x [41 x i32]] zeroinitializer, align 4
-@imr = global [41 x [41 x i32]] zeroinitializer, align 4
-@rma = global [41 x [41 x float]] zeroinitializer, align 4
-@rmb = global [41 x [41 x float]] zeroinitializer, align 4
-@rmr = global [41 x [41 x float]] zeroinitializer, align 4
-@piececount = global [4 x i32] zeroinitializer, align 4
-@class = global [13 x i32] zeroinitializer, align 4
-@piecemax = global [13 x i32] zeroinitializer, align 4
-@puzzl = global [512 x i32] zeroinitializer, align 4
-@p = global [13 x [512 x i32]] zeroinitializer, align 4
-@n = global i32 0, align 4
-@kount = global i32 0, align 4
-@top = global i32 0, align 4
-@z = global [257 x %struct.complex] zeroinitializer, align 4
-@w = global [257 x %struct.complex] zeroinitializer, align 4
-@e = global [130 x %struct.complex] zeroinitializer, align 4
-@zr = global float 0.000000e+00, align 4
-@zi = global float 0.000000e+00, align 4
+@seed = dso_local global i64 0, align 8
+@biggest = dso_local global i32 0, align 4
+@littlest = dso_local global i32 0, align 4
+@sortlist = dso_local global [5001 x i32] zeroinitializer, align 16
+@value = dso_local global float 0.000000e+00, align 4
+@fixed = dso_local global float 0.000000e+00, align 4
+@floated = dso_local global float 0.000000e+00, align 4
+@permarray = dso_local global [11 x i32] zeroinitializer, align 16
+@pctr = dso_local global i32 0, align 4
+@tree = dso_local global ptr null, align 8
+@stack = dso_local global [4 x i32] zeroinitializer, align 16
+@cellspace = dso_local global [19 x %struct.element] zeroinitializer, align 16
+@freelist = dso_local global i32 0, align 4
+@movesdone = dso_local global i32 0, align 4
+@ima = dso_local global [41 x [41 x i32]] zeroinitializer, align 16
+@imb = dso_local global [41 x [41 x i32]] zeroinitializer, align 16
+@imr = dso_local global [41 x [41 x i32]] zeroinitializer, align 16
+@rma = dso_local global [41 x [41 x float]] zeroinitializer, align 16
+@rmb = dso_local global [41 x [41 x float]] zeroinitializer, align 16
+@rmr = dso_local global [41 x [41 x float]] zeroinitializer, align 16
+@piececount = dso_local global [4 x i32] zeroinitializer, align 16
+@class = dso_local global [13 x i32] zeroinitializer, align 16
+@piecemax = dso_local global [13 x i32] zeroinitializer, align 16
+@puzzl = dso_local global [512 x i32] zeroinitializer, align 16
+@p = dso_local global [13 x [512 x i32]] zeroinitializer, align 16
+@n = dso_local global i32 0, align 4
+@kount = dso_local global i32 0, align 4
+@top = dso_local global i32 0, align 4
+@z = dso_local global [257 x %struct.complex] zeroinitializer, align 16
+@w = dso_local global [257 x %struct.complex] zeroinitializer, align 16
+@e = dso_local global [130 x %struct.complex] zeroinitializer, align 16
+@zr = dso_local global float 0.000000e+00, align 4
+@zi = dso_local global float 0.000000e+00, align 4
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @Initrand() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @Initrand() #0 {
   store i64 74755, ptr @seed, align 8, !tbaa !5
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define i32 @Rand() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local i32 @Rand() #0 {
   %1 = load i64, ptr @seed, align 8, !tbaa !5
   %2 = mul nsw i64 %1, 1309
   %3 = add nsw i64 %2, 13849
@@ -56,8 +56,8 @@ define i32 @Rand() #0 {
   ret i32 %6
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @Initarr() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @Initarr() #0 {
   %1 = alloca i32, align 4
   %2 = alloca i64, align 8
   call void @llvm.lifetime.start.p0(i64 4, ptr %1) #2
@@ -145,8 +145,8 @@ declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture) #1
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture) #1
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @Quicksort(ptr noundef %0, i32 noundef %1, i32 noundef %2) #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @Quicksort(ptr noundef %0, i32 noundef %1, i32 noundef %2) #0 {
   %4 = alloca ptr, align 8
   %5 = alloca i32, align 4
   %6 = alloca i32, align 4
@@ -294,8 +294,8 @@ define void @Quicksort(ptr noundef %0, i32 noundef %1, i32 noundef %2) #0 {
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define i32 @Quick() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local i32 @Quick() #0 {
   %1 = alloca i32, align 4
   call void @Initarr()
   call void @Quicksort(ptr noundef @sortlist, i32 noundef 1, i32 noundef 5000)
@@ -305,7 +305,7 @@ define i32 @Quick() #0 {
   br i1 %4, label %9, label %5
 
 5:                                                ; preds = %0
-  %6 = load i32, ptr getelementptr inbounds ([5001 x i32], ptr @sortlist, i64 0, i64 5000), align 4, !tbaa !9
+  %6 = load i32, ptr getelementptr inbounds ([5001 x i32], ptr @sortlist, i64 0, i64 5000), align 16, !tbaa !9
   %7 = load i32, ptr @biggest, align 4, !tbaa !9
   %8 = icmp ne i32 %6, %7
   br i1 %8, label %9, label %10
@@ -315,7 +315,7 @@ define i32 @Quick() #0 {
   br label %12
 
 10:                                               ; preds = %5
-  %11 = load i32, ptr getelementptr inbounds ([5001 x i32], ptr @sortlist, i64 0, i64 5000), align 4, !tbaa !9
+  %11 = load i32, ptr getelementptr inbounds ([5001 x i32], ptr @sortlist, i64 0, i64 5000), align 16, !tbaa !9
   store i32 %11, ptr %1, align 4
   br label %12
 
@@ -324,7 +324,7 @@ define i32 @Quick() #0 {
   ret i32 %13
 }
 
-attributes #0 = { nounwind ssp uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
+attributes #0 = { nounwind uwtable "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
 attributes #2 = { nounwind }
 
@@ -333,9 +333,9 @@ attributes #2 = { nounwind }
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 8, !"PIC Level", i32 2}
-!2 = !{i32 7, !"uwtable", i32 1}
-!3 = !{i32 7, !"frame-pointer", i32 1}
-!4 = !{!"Homebrew clang version 19.1.2"}
+!2 = !{i32 7, !"PIE Level", i32 2}
+!3 = !{i32 7, !"uwtable", i32 2}
+!4 = !{!"Ubuntu clang version 19.1.2 (++20241028122730+d8752671e825-1~exp1~20241028122742.57)"}
 !5 = !{!6, !6, i64 0}
 !6 = !{!"long", !7, i64 0}
 !7 = !{!"omnipotent char", !8, i64 0}

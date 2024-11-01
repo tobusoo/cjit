@@ -7,14 +7,14 @@ source_filename = "intmm.c"
 @imb = internal global ptr null, align 8
 @imr = internal global ptr null, align 8
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @Initrand() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @Initrand() #0 {
   store i64 74755, ptr @seed, align 8, !tbaa !5
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define i32 @Rand() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local i32 @Rand() #0 {
   %1 = load i64, ptr @seed, align 8, !tbaa !5
   %2 = mul nsw i64 %1, 1309
   %3 = add nsw i64 %2, 13849
@@ -25,8 +25,8 @@ define i32 @Rand() #0 {
   ret i32 %6
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @Initmatrix(ptr noundef %0) #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @InitMatrix(ptr noundef %0) #0 {
   %2 = alloca ptr, align 8
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
@@ -102,8 +102,8 @@ declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture) #1
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture) #1
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @Innerproduct(ptr noalias noundef %0, ptr noalias noundef %1, ptr noalias noundef %2, i32 noundef %3, i32 noundef %4, i32 noundef %5) #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @Innerproduct(ptr noalias noundef %0, ptr noalias noundef %1, ptr noalias noundef %2, i32 noundef %3, i32 noundef %4, i32 noundef %5) #0 {
   %7 = alloca ptr, align 8
   %8 = alloca ptr, align 8
   %9 = alloca ptr, align 8
@@ -167,8 +167,8 @@ define void @Innerproduct(ptr noalias noundef %0, ptr noalias noundef %1, ptr no
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define i32 @init(i32 noundef %0) #0 {
+; Function Attrs: nounwind uwtable
+define dso_local i32 @init(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca ptr, align 8
@@ -381,9 +381,9 @@ define i32 @init(i32 noundef %0) #0 {
 131:                                              ; preds = %93
   call void @Initrand()
   %132 = load ptr, ptr @ima, align 8, !tbaa !9
-  call void @Initmatrix(ptr noundef %132)
+  call void @InitMatrix(ptr noundef %132)
   %133 = load ptr, ptr @imb, align 8, !tbaa !9
-  call void @Initmatrix(ptr noundef %133)
+  call void @InitMatrix(ptr noundef %133)
   store i32 1, ptr %2, align 4
   store i32 1, ptr %5, align 4
   br label %134
@@ -410,8 +410,8 @@ declare void @free(ptr noundef) #3
 ; Function Attrs: allocsize(0,1)
 declare ptr @calloc(i64 noundef, i64 noundef) #4
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @deinit() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @deinit() #0 {
   %1 = load ptr, ptr @ima, align 8, !tbaa !9
   %2 = getelementptr inbounds ptr, ptr %1, i64 0
   %3 = load ptr, ptr %2, align 8, !tbaa !9
@@ -433,8 +433,8 @@ define void @deinit() #0 {
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define i32 @intmm() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local i32 @intmm() #0 {
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
@@ -506,11 +506,11 @@ define i32 @intmm() #0 {
   ret i32 %40
 }
 
-attributes #0 = { nounwind ssp uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
+attributes #0 = { nounwind uwtable "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { allocsize(0) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
-attributes #3 = { "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
-attributes #4 = { allocsize(0,1) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
+attributes #2 = { allocsize(0) "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
+attributes #3 = { "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
+attributes #4 = { allocsize(0,1) "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
 attributes #5 = { nounwind }
 attributes #6 = { allocsize(0) }
 attributes #7 = { allocsize(0,1) }
@@ -520,9 +520,9 @@ attributes #7 = { allocsize(0,1) }
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 8, !"PIC Level", i32 2}
-!2 = !{i32 7, !"uwtable", i32 1}
-!3 = !{i32 7, !"frame-pointer", i32 1}
-!4 = !{!"Homebrew clang version 19.1.2"}
+!2 = !{i32 7, !"PIE Level", i32 2}
+!3 = !{i32 7, !"uwtable", i32 2}
+!4 = !{!"Ubuntu clang version 19.1.2 (++20241028122730+d8752671e825-1~exp1~20241028122742.57)"}
 !5 = !{!6, !6, i64 0}
 !6 = !{!"long", !7, i64 0}
 !7 = !{!"omnipotent char", !8, i64 0}

@@ -2,6 +2,7 @@
 
 #include <llvm/ADT/Sequence.h>
 
+#include <math.h>
 #include <random>
 
 using namespace llvm;

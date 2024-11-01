@@ -1,6 +1,7 @@
 #include "FloatMMBenchmark.h"
 
 #include <llvm/ADT/Sequence.h>
+#include <math.h>
 #include <numeric>
 
 using namespace llvm;
@@ -41,10 +42,8 @@ std::optional<double> FloatMMBenchmark::run(unsigned NumIters,
   for (auto I : llvm::seq(NumIters)) {
     double Score = runIter(I + 1, IterLength, IterJob);
     Scores.push_back(Score);
-    if (GotUnexpectedRes) {
-      Deinit();
+    if (GotUnexpectedRes)
       return std::nullopt;
-    }
   }
 
   Deinit();

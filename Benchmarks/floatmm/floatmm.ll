@@ -7,8 +7,8 @@ source_filename = "floatmm.c"
 @rmr = internal global ptr null, align 8
 @seed = internal global i64 0, align 8
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define i32 @init(i32 noundef %0) #0 {
+; Function Attrs: nounwind uwtable
+define dso_local i32 @init(i32 noundef %0) #0 {
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
   %4 = alloca ptr, align 8
@@ -23,7 +23,7 @@ define i32 @init(i32 noundef %0) #0 {
   %10 = load i32, ptr %3, align 4, !tbaa !5
   %11 = add nsw i32 %10, 1
   %12 = sext i32 %11 to i64
-  %13 = mul i64 8, %12
+  %13 = mul i64 4, %12
   %14 = load i32, ptr %3, align 4, !tbaa !5
   %15 = add nsw i32 %14, 1
   %16 = sext i32 %15 to i64
@@ -44,7 +44,7 @@ define i32 @init(i32 noundef %0) #0 {
   %23 = load i32, ptr %3, align 4, !tbaa !5
   %24 = add nsw i32 %23, 1
   %25 = sext i32 %24 to i64
-  %26 = mul i64 8, %25
+  %26 = mul i64 4, %25
   %27 = load i32, ptr %3, align 4, !tbaa !5
   %28 = add nsw i32 %27, 1
   %29 = sext i32 %28 to i64
@@ -67,7 +67,7 @@ define i32 @init(i32 noundef %0) #0 {
   %37 = load i32, ptr %3, align 4, !tbaa !5
   %38 = add nsw i32 %37, 1
   %39 = sext i32 %38 to i64
-  %40 = mul i64 8, %39
+  %40 = mul i64 4, %39
   %41 = load i32, ptr %3, align 4, !tbaa !5
   %42 = add nsw i32 %41, 1
   %43 = sext i32 %42 to i64
@@ -183,7 +183,7 @@ define i32 @init(i32 noundef %0) #0 {
   %101 = add nsw i32 %100, 1
   %102 = mul nsw i32 %99, %101
   %103 = sext i32 %102 to i64
-  %104 = getelementptr inbounds double, ptr %98, i64 %103
+  %104 = getelementptr inbounds float, ptr %98, i64 %103
   %105 = load ptr, ptr @rma, align 8, !tbaa !9
   %106 = load i32, ptr %8, align 4, !tbaa !5
   %107 = sext i32 %106 to i64
@@ -195,7 +195,7 @@ define i32 @init(i32 noundef %0) #0 {
   %112 = add nsw i32 %111, 1
   %113 = mul nsw i32 %110, %112
   %114 = sext i32 %113 to i64
-  %115 = getelementptr inbounds double, ptr %109, i64 %114
+  %115 = getelementptr inbounds float, ptr %109, i64 %114
   %116 = load ptr, ptr @rmb, align 8, !tbaa !9
   %117 = load i32, ptr %8, align 4, !tbaa !5
   %118 = sext i32 %117 to i64
@@ -207,7 +207,7 @@ define i32 @init(i32 noundef %0) #0 {
   %123 = add nsw i32 %122, 1
   %124 = mul nsw i32 %121, %123
   %125 = sext i32 %124 to i64
-  %126 = getelementptr inbounds double, ptr %120, i64 %125
+  %126 = getelementptr inbounds float, ptr %120, i64 %125
   %127 = load ptr, ptr @rmr, align 8, !tbaa !9
   %128 = load i32, ptr %8, align 4, !tbaa !5
   %129 = sext i32 %128 to i64
@@ -256,7 +256,7 @@ declare void @free(ptr noundef) #3
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture) #1
 
-; Function Attrs: nounwind ssp uwtable(sync)
+; Function Attrs: nounwind uwtable
 define internal void @rInitmatrix(ptr noundef %0) #0 {
   %2 = alloca ptr, align 8
   %3 = alloca i32, align 4
@@ -294,8 +294,8 @@ define internal void @rInitmatrix(ptr noundef %0) #0 {
   %20 = mul nsw i32 %19, 120
   %21 = sub nsw i32 %17, %20
   %22 = sub nsw i32 %21, 60
-  %23 = sitofp i32 %22 to double
-  %24 = fdiv double %23, 3.000000e+00
+  %23 = sitofp i32 %22 to float
+  %24 = fdiv float %23, 3.000000e+00
   %25 = load ptr, ptr %2, align 8, !tbaa !9
   %26 = load i32, ptr %4, align 4, !tbaa !5
   %27 = sext i32 %26 to i64
@@ -303,8 +303,8 @@ define internal void @rInitmatrix(ptr noundef %0) #0 {
   %29 = load ptr, ptr %28, align 8, !tbaa !9
   %30 = load i32, ptr %5, align 4, !tbaa !5
   %31 = sext i32 %30 to i64
-  %32 = getelementptr inbounds double, ptr %29, i64 %31
-  store double %24, ptr %32, align 8, !tbaa !14
+  %32 = getelementptr inbounds float, ptr %29, i64 %31
+  store float %24, ptr %32, align 4, !tbaa !14
   br label %33
 
 33:                                               ; preds = %15
@@ -329,8 +329,8 @@ define internal void @rInitmatrix(ptr noundef %0) #0 {
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define void @deinit() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local void @deinit() #0 {
   %1 = load ptr, ptr @rma, align 8, !tbaa !9
   %2 = getelementptr inbounds ptr, ptr %1, i64 0
   %3 = load ptr, ptr %2, align 8, !tbaa !9
@@ -352,8 +352,8 @@ define void @deinit() #0 {
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
-define double @floatmm() #0 {
+; Function Attrs: nounwind uwtable
+define dso_local double @floatmm() #0 {
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   call void @llvm.lifetime.start.p0(i64 4, ptr %1) #5
@@ -385,7 +385,7 @@ define double @floatmm() #0 {
   %17 = load ptr, ptr %16, align 8, !tbaa !9
   %18 = load i32, ptr %2, align 4, !tbaa !5
   %19 = sext i32 %18 to i64
-  %20 = getelementptr inbounds double, ptr %17, i64 %19
+  %20 = getelementptr inbounds float, ptr %17, i64 %19
   %21 = load ptr, ptr @rma, align 8, !tbaa !9
   %22 = load ptr, ptr @rmb, align 8, !tbaa !9
   %23 = load i32, ptr %1, align 4, !tbaa !5
@@ -412,14 +412,15 @@ define double @floatmm() #0 {
   %33 = load ptr, ptr @rmr, align 8, !tbaa !9
   %34 = getelementptr inbounds ptr, ptr %33, i64 1
   %35 = load ptr, ptr %34, align 8, !tbaa !9
-  %36 = getelementptr inbounds double, ptr %35, i64 1
-  %37 = load double, ptr %36, align 8, !tbaa !14
+  %36 = getelementptr inbounds float, ptr %35, i64 1
+  %37 = load float, ptr %36, align 4, !tbaa !14
+  %38 = fpext float %37 to double
   call void @llvm.lifetime.end.p0(i64 4, ptr %2) #5
   call void @llvm.lifetime.end.p0(i64 4, ptr %1) #5
-  ret double %37
+  ret double %38
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
+; Function Attrs: nounwind uwtable
 define internal void @rInnerproduct(ptr noundef %0, ptr noundef %1, ptr noundef %2, i32 noundef %3, i32 noundef %4) #0 {
   %6 = alloca ptr, align 8
   %7 = alloca ptr, align 8
@@ -434,7 +435,7 @@ define internal void @rInnerproduct(ptr noundef %0, ptr noundef %1, ptr noundef 
   store i32 %4, ptr %10, align 4, !tbaa !5
   call void @llvm.lifetime.start.p0(i64 4, ptr %11) #5
   %12 = load ptr, ptr %6, align 8, !tbaa !9
-  store double 0.000000e+00, ptr %12, align 8, !tbaa !14
+  store float 0.000000e+00, ptr %12, align 4, !tbaa !14
   store i32 1, ptr %11, align 4, !tbaa !5
   br label %13
 
@@ -446,7 +447,7 @@ define internal void @rInnerproduct(ptr noundef %0, ptr noundef %1, ptr noundef 
 
 17:                                               ; preds = %13
   %18 = load ptr, ptr %6, align 8, !tbaa !9
-  %19 = load double, ptr %18, align 8, !tbaa !14
+  %19 = load float, ptr %18, align 4, !tbaa !14
   %20 = load ptr, ptr %7, align 8, !tbaa !9
   %21 = load i32, ptr %9, align 4, !tbaa !5
   %22 = sext i32 %21 to i64
@@ -454,8 +455,8 @@ define internal void @rInnerproduct(ptr noundef %0, ptr noundef %1, ptr noundef 
   %24 = load ptr, ptr %23, align 8, !tbaa !9
   %25 = load i32, ptr %11, align 4, !tbaa !5
   %26 = sext i32 %25 to i64
-  %27 = getelementptr inbounds double, ptr %24, i64 %26
-  %28 = load double, ptr %27, align 8, !tbaa !14
+  %27 = getelementptr inbounds float, ptr %24, i64 %26
+  %28 = load float, ptr %27, align 4, !tbaa !14
   %29 = load ptr, ptr %8, align 8, !tbaa !9
   %30 = load i32, ptr %11, align 4, !tbaa !5
   %31 = sext i32 %30 to i64
@@ -463,11 +464,11 @@ define internal void @rInnerproduct(ptr noundef %0, ptr noundef %1, ptr noundef 
   %33 = load ptr, ptr %32, align 8, !tbaa !9
   %34 = load i32, ptr %10, align 4, !tbaa !5
   %35 = sext i32 %34 to i64
-  %36 = getelementptr inbounds double, ptr %33, i64 %35
-  %37 = load double, ptr %36, align 8, !tbaa !14
-  %38 = call double @llvm.fmuladd.f64(double %28, double %37, double %19)
+  %36 = getelementptr inbounds float, ptr %33, i64 %35
+  %37 = load float, ptr %36, align 4, !tbaa !14
+  %38 = call float @llvm.fmuladd.f32(float %28, float %37, float %19)
   %39 = load ptr, ptr %6, align 8, !tbaa !9
-  store double %38, ptr %39, align 8, !tbaa !14
+  store float %38, ptr %39, align 4, !tbaa !14
   br label %40
 
 40:                                               ; preds = %17
@@ -481,13 +482,13 @@ define internal void @rInnerproduct(ptr noundef %0, ptr noundef %1, ptr noundef 
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
+; Function Attrs: nounwind uwtable
 define internal void @Initrand() #0 {
   store i64 74755, ptr @seed, align 8, !tbaa !21
   ret void
 }
 
-; Function Attrs: nounwind ssp uwtable(sync)
+; Function Attrs: nounwind uwtable
 define internal i32 @Rand() #0 {
   %1 = load i64, ptr @seed, align 8, !tbaa !21
   %2 = mul nsw i64 %1, 1309
@@ -500,12 +501,12 @@ define internal i32 @Rand() #0 {
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare double @llvm.fmuladd.f64(double, double, double) #4
+declare float @llvm.fmuladd.f32(float, float, float) #4
 
-attributes #0 = { nounwind ssp uwtable(sync) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
+attributes #0 = { nounwind uwtable "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
 attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { allocsize(0) "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
-attributes #3 = { "frame-pointer"="non-leaf" "no-trapping-math"="true" "stack-protector-buffer-size"="8" }
+attributes #2 = { allocsize(0) "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
+attributes #3 = { "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
 attributes #4 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #5 = { nounwind }
 attributes #6 = { allocsize(0) }
@@ -515,9 +516,9 @@ attributes #6 = { allocsize(0) }
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 8, !"PIC Level", i32 2}
-!2 = !{i32 7, !"uwtable", i32 1}
-!3 = !{i32 7, !"frame-pointer", i32 1}
-!4 = !{!"Homebrew clang version 19.1.2"}
+!2 = !{i32 7, !"PIE Level", i32 2}
+!3 = !{i32 7, !"uwtable", i32 2}
+!4 = !{!"Ubuntu clang version 19.1.2 (++20241028122730+d8752671e825-1~exp1~20241028122742.57)"}
 !5 = !{!6, !6, i64 0}
 !6 = !{!"int", !7, i64 0}
 !7 = !{!"omnipotent char", !8, i64 0}
@@ -528,7 +529,7 @@ attributes #6 = { allocsize(0) }
 !12 = !{!"llvm.loop.mustprogress"}
 !13 = !{!"llvm.loop.unroll.disable"}
 !14 = !{!15, !15, i64 0}
-!15 = !{!"double", !7, i64 0}
+!15 = !{!"float", !7, i64 0}
 !16 = distinct !{!16, !12, !13}
 !17 = distinct !{!17, !12, !13}
 !18 = distinct !{!18, !12, !13}

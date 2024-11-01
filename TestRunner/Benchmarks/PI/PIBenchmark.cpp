@@ -1,6 +1,7 @@
 #include "PIBenchmark.h"
 
 #include <llvm/ADT/Sequence.h>
+#include <math.h>
 #include <numeric>
 
 using namespace llvm;

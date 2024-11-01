@@ -16,7 +16,7 @@ int Rand() {
 
 /* Multiplies two integer matrices. */
 
-void Initmatrix(int **m) {
+void InitMatrix(int **m) {
   int temp, i, j;
   for (i = 1; i <= rowsize; i++)
     for (j = 1; j <= rowsize; j++) {
@@ -84,8 +84,8 @@ int init(int _rowsize) {
     imr[i] = r + (i * (_rowsize + 1));
   }
   Initrand();
-  Initmatrix(ima);
-  Initmatrix(imb);
+  InitMatrix(ima);
+  InitMatrix(imb);
   return 1;
 }
 

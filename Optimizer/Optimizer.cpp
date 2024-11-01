@@ -8,6 +8,8 @@
 #include "llvm/Transforms/Scalar/LICM.h"
 #include "llvm/Transforms/Scalar/LoopUnrollPass.h"
 #include "llvm/Transforms/Vectorize/LoopVectorize.h"
+#include <llvm-19/llvm/Transforms/Scalar/LoopPassManager.h>
+#include <llvm-19/llvm/Transforms/Utils/LoopSimplify.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -29,7 +31,9 @@
 #include <llvm/Transforms/Scalar/LICM.h>
 #include <llvm/Transforms/Scalar/LoopPassManager.h>
 #include <llvm/Transforms/Scalar/LoopRotation.h>
+#include <llvm/Transforms/Scalar/LoopSimplifyCFG.h>
 #include <llvm/Transforms/Scalar/SROA.h>
+#include <llvm/Transforms/Scalar/SimpleLoopUnswitch.h>
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
 #include <llvm/Transforms/Scalar/Sink.h>
 
@@ -95,27 +99,6 @@ bool Optimizer::optimizeIR() {
     FunctionPassManager FPM;
     FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
     FPM.addPass(InstCombinePass());
-    MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
-  }
-  MPM.addPass(ModuleInlinerPass());
-  {
-    FunctionPassManager FPM;
-    FPM.addPass(EarlyCSEPass());
-    FPM.addPass(GVNPass());
-    FPM.addPass(SinkingPass());
-    FPM.addPass(SimplifyCFGPass());
-    FPM.addPass(createFunctionToLoopPassAdaptor(LoopRotatePass()));
-    FPM.addPass(createFunctionToLoopPassAdaptor(IndVarSimplifyPass()));
-    MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
-  }
-  MPM.addPass(NoOpModulePass());
-  {
-    FunctionPassManager FPM;
-    FPM.addPass(createFunctionToLoopPassAdaptor(LICMPass(LICMOptions()), true));
-    FPM.addPass(InstCombinePass());
-    FPM.addPass(LoopVectorizePass());
-    FPM.addPass(InstCombinePass());
-    FPM.addPass(SimplifyCFGPass());
     MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
   }
 

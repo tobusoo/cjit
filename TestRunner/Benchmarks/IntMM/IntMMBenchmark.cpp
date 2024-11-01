@@ -1,6 +1,7 @@
 #include "IntMMBenchmark.h"
 
 #include <llvm/ADT/Sequence.h>
+#include <math.h>
 #include <numeric>
 #include <optional>
 
@@ -42,10 +43,8 @@ std::optional<double> IntMMBenchmark::run(unsigned NumIters,
   for (auto I : llvm::seq(NumIters)) {
     double Score = runIter(I + 1, IterLength, IterJob);
     Scores.push_back(Score);
-    if (GotUnexpectedRes) {
-      Deinit();
+    if (GotUnexpectedRes)
       return std::nullopt;
-    }
   }
 
   Deinit();

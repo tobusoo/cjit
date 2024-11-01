@@ -14,6 +14,10 @@ add_executable(test-runner
     Benchmarks/QSort/QSortBenchmark.cpp
     Benchmarks/IntMM/IntMMBenchmark.cpp
     Benchmarks/FloatMM/FloatMMBenchmark.cpp
+    Benchmarks/Sum1/Sum1Benchmark.cpp
+    Benchmarks/Sum2/Sum2Benchmark.cpp
+    Benchmarks/Sum3/Sum3Benchmark.cpp
+    Benchmarks/Sum4/Sum4Benchmark.cpp
 )
 
 set(NO_RTTI "-fno-rtti")

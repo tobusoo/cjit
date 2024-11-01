@@ -5,6 +5,10 @@
 #include "Benchmarks/PI/PIBenchmark.h"
 #include "Benchmarks/QSort/QSortBenchmark.h"
 #include "Benchmarks/Sink/SinkBenchmark.h"
+#include "Benchmarks/Sum1/Sum1Benchmark.h"
+#include "Benchmarks/Sum2/Sum2Benchmark.h"
+#include "Benchmarks/Sum3/Sum3Benchmark.h"
+#include "Benchmarks/Sum4/Sum4Benchmark.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/StringSwitch.h"
 
@@ -95,6 +99,14 @@ std::unique_ptr<BenchRunner> TestRunner::getBenchRunner(StringRef Name) {
     return std::make_unique<FloatMMBenchmark>(*JIT);
   if (Name == "intmm")
     return std::make_unique<IntMMBenchmark>(*JIT);
+  if (Name == "sum-1")
+    return std::make_unique<Sum1Benchmark>(*JIT);
+  if (Name == "sum-2")
+    return std::make_unique<Sum2Benchmark>(*JIT);
+  if (Name == "sum-3")
+    return std::make_unique<Sum3Benchmark>(*JIT);
+  if (Name == "sum-4")
+    return std::make_unique<Sum4Benchmark>(*JIT);
   return nullptr;
 }
 
