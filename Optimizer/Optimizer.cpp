@@ -8,8 +8,8 @@
 #include "llvm/Transforms/Scalar/LICM.h"
 #include "llvm/Transforms/Scalar/LoopUnrollPass.h"
 #include "llvm/Transforms/Vectorize/LoopVectorize.h"
-#include <llvm-19/llvm/Transforms/Scalar/LoopPassManager.h>
-#include <llvm-19/llvm/Transforms/Utils/LoopSimplify.h>
+#include <llvm/Transforms/Scalar/LoopPassManager.h>
+#include <llvm/Transforms/Utils/LoopSimplify.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
