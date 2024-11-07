@@ -1,5 +1,5 @@
-; ModuleID = 'sum-1.c'
-source_filename = "sum-1.c"
+; ModuleID = './sum-1.c'
+source_filename = "./sum-1.c"
 
 @seed = internal global i64 0, align 8
 @size = internal global i32 0, align 4
@@ -165,63 +165,60 @@ define dso_local i32 @sum_1() #0 {
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
   call void @llvm.lifetime.start.p0(i64 4, ptr %1) #4
   call void @llvm.lifetime.start.p0(i64 4, ptr %2) #4
+  %4 = load i32, ptr @size, align 4, !tbaa !11
+  store i32 %4, ptr %2, align 4, !tbaa !11
   call void @llvm.lifetime.start.p0(i64 4, ptr %3) #4
-  %5 = load i32, ptr @size, align 4, !tbaa !11
-  store i32 %5, ptr %3, align 4, !tbaa !11
-  call void @llvm.lifetime.start.p0(i64 4, ptr %4) #4
-  store i32 0, ptr %4, align 4, !tbaa !11
+  store i32 0, ptr %3, align 4, !tbaa !11
   store i32 0, ptr %1, align 4, !tbaa !11
-  br label %6
+  br label %5
 
-6:                                                ; preds = %33, %0
-  %7 = load i32, ptr %1, align 4, !tbaa !11
-  %8 = load i32, ptr %3, align 4, !tbaa !11
-  %9 = icmp slt i32 %7, %8
-  br i1 %9, label %10, label %36
+5:                                                ; preds = %32, %0
+  %6 = load i32, ptr %1, align 4, !tbaa !11
+  %7 = load i32, ptr %2, align 4, !tbaa !11
+  %8 = icmp slt i32 %6, %7
+  br i1 %8, label %9, label %35
 
-10:                                               ; preds = %6
-  %11 = load ptr, ptr @ima, align 8, !tbaa !9
-  %12 = load i32, ptr %1, align 4, !tbaa !11
-  %13 = sext i32 %12 to i64
-  %14 = getelementptr inbounds i32, ptr %11, i64 %13
-  %15 = load i32, ptr %14, align 4, !tbaa !11
-  %16 = load ptr, ptr @imb, align 8, !tbaa !9
-  %17 = load i32, ptr %2, align 4, !tbaa !11
-  %18 = sext i32 %17 to i64
-  %19 = getelementptr inbounds i32, ptr %16, i64 %18
-  %20 = load i32, ptr %19, align 4, !tbaa !11
-  %21 = add nsw i32 %15, %20
-  %22 = load ptr, ptr @imr, align 8, !tbaa !9
-  %23 = load i32, ptr %1, align 4, !tbaa !11
-  %24 = sext i32 %23 to i64
-  %25 = getelementptr inbounds i32, ptr %22, i64 %24
-  store i32 %21, ptr %25, align 4, !tbaa !11
-  %26 = load ptr, ptr @imr, align 8, !tbaa !9
-  %27 = load i32, ptr %1, align 4, !tbaa !11
-  %28 = sext i32 %27 to i64
-  %29 = getelementptr inbounds i32, ptr %26, i64 %28
-  %30 = load i32, ptr %29, align 4, !tbaa !11
-  %31 = load i32, ptr %4, align 4, !tbaa !11
-  %32 = add i32 %31, %30
-  store i32 %32, ptr %4, align 4, !tbaa !11
-  br label %33
+9:                                                ; preds = %5
+  %10 = load ptr, ptr @ima, align 8, !tbaa !9
+  %11 = load i32, ptr %1, align 4, !tbaa !11
+  %12 = sext i32 %11 to i64
+  %13 = getelementptr inbounds i32, ptr %10, i64 %12
+  %14 = load i32, ptr %13, align 4, !tbaa !11
+  %15 = load ptr, ptr @imb, align 8, !tbaa !9
+  %16 = load i32, ptr %1, align 4, !tbaa !11
+  %17 = sext i32 %16 to i64
+  %18 = getelementptr inbounds i32, ptr %15, i64 %17
+  %19 = load i32, ptr %18, align 4, !tbaa !11
+  %20 = add nsw i32 %14, %19
+  %21 = load ptr, ptr @imr, align 8, !tbaa !9
+  %22 = load i32, ptr %1, align 4, !tbaa !11
+  %23 = sext i32 %22 to i64
+  %24 = getelementptr inbounds i32, ptr %21, i64 %23
+  store i32 %20, ptr %24, align 4, !tbaa !11
+  %25 = load ptr, ptr @imr, align 8, !tbaa !9
+  %26 = load i32, ptr %1, align 4, !tbaa !11
+  %27 = sext i32 %26 to i64
+  %28 = getelementptr inbounds i32, ptr %25, i64 %27
+  %29 = load i32, ptr %28, align 4, !tbaa !11
+  %30 = load i32, ptr %3, align 4, !tbaa !11
+  %31 = add i32 %30, %29
+  store i32 %31, ptr %3, align 4, !tbaa !11
+  br label %32
 
-33:                                               ; preds = %10
-  %34 = load i32, ptr %1, align 4, !tbaa !11
-  %35 = add nsw i32 %34, 1
-  store i32 %35, ptr %1, align 4, !tbaa !11
-  br label %6, !llvm.loop !16
+32:                                               ; preds = %9
+  %33 = load i32, ptr %1, align 4, !tbaa !11
+  %34 = add nsw i32 %33, 1
+  store i32 %34, ptr %1, align 4, !tbaa !11
+  br label %5, !llvm.loop !16
 
-36:                                               ; preds = %6
-  %37 = load i32, ptr %4, align 4, !tbaa !11
-  call void @llvm.lifetime.end.p0(i64 4, ptr %4) #4
+35:                                               ; preds = %5
+  %36 = load i32, ptr %3, align 4, !tbaa !11
   call void @llvm.lifetime.end.p0(i64 4, ptr %3) #4
   call void @llvm.lifetime.end.p0(i64 4, ptr %2) #4
   call void @llvm.lifetime.end.p0(i64 4, ptr %1) #4
-  ret i32 %37
+  ret i32 %36
 }
 
 attributes #0 = { nounwind uwtable "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }

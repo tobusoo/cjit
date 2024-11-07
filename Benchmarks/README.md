@@ -27,6 +27,10 @@
   $ cjit/generate-cfgs.sh /path/to/llvm/build/bin/opt sum-1.opt-O3.ll
   ```
   _Note: запускайте именно на .ll.init файле. На sum-1.ll не получится - в нём нет информации о вашем CPU. В init она добавляется автоматически._   
+  Другой способ получить IR с O3 - запустить TestRunner c `-O3`:
+  ```sh
+  $ ./build/TestRunner/test-runner --benchmark=Benchmarks/sum-1 -O3 -dump-ir
+  ```
   Откройте CFG `sum_1` - в нём видно, что цикл векторизовался.  
   Распечатайте IR до векторизатора:
   ```sh

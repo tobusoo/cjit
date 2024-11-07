@@ -56,11 +56,11 @@ void deinit() {
 }
 
 unsigned sum_1() {
-  int i, j;
+  int i;
   int _size = size;
   unsigned _sum = 0;
   for (i = 0; i < _size; i++) {
-    imr[i] = ima[i] + imb[j];
+    imr[i] = ima[i] + imb[i];
     _sum += imr[i];
   }
   return _sum;

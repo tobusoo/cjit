@@ -24,7 +24,7 @@ std::optional<double> Sum1Benchmark::run(unsigned NumIters,
     return std::nullopt;
   }
 
-  unsigned ExpectedRes = 4294915617;
+  unsigned ExpectedRes = 4294865392;
   bool GotUnexpectedRes = false;
 
   auto IterJob = [&]() {

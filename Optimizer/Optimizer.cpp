@@ -8,8 +8,7 @@
 #include "llvm/Transforms/Scalar/LICM.h"
 #include "llvm/Transforms/Scalar/LoopUnrollPass.h"
 #include "llvm/Transforms/Vectorize/LoopVectorize.h"
-#include <llvm/Transforms/Scalar/LoopPassManager.h>
-#include <llvm/Transforms/Utils/LoopSimplify.h>
+#include <llvm-19/llvm/Passes/OptimizationLevel.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
@@ -36,6 +35,8 @@
 #include <llvm/Transforms/Scalar/SimpleLoopUnswitch.h>
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
 #include <llvm/Transforms/Scalar/Sink.h>
+#include <llvm/Transforms/Utils/LoopSimplify.h>
+#include <llvm/Transforms/Scalar/LICM.h>
 
 #include <optional>
 #include <string>
@@ -56,6 +57,8 @@ static cl::alias VerboseAlias("v", cl::desc("alias for --verbose"),
                               cl::aliasopt(Verbose));
 
 static cl::opt<bool> DumpIR("dump-ir", cl::init(false));
+
+static cl::opt<bool> O3("O3", cl::init(false));
 
 static cl::opt<bool>
     DebugPM("debug-pass-manager", cl::Hidden,
@@ -91,29 +94,44 @@ bool Optimizer::optimizeIR() {
   PB.registerLoopAnalyses(LAM);
   PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-  /// TODO: Extend pipeline here.
   ModulePassManager MPM;
+
   MPM.addPass(VerifierPass());
 
-  {
+  if (O3) {
+    if (auto Err = PB.parsePassPipeline(MPM, "default<O3>")) {
+      errs() << toString(std::move(Err)) << "\n";
+      return false;
+    }
+  } else {
+    /// TODO: Extend pipeline here (extend \c MPM).
     FunctionPassManager FPM;
     FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
     FPM.addPass(InstCombinePass());
+
     MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
   }
 
   MPM.addPass(VerifierPass());
 
-  if (Verbose)
-    errs() << "Running optimization pipeline on module...\n";
+  if (Verbose) {
+    if (O3)
+      errs() << "Running O3 optimization pipeline on module...\n";
+    else
+      errs() << "Running custom optimization pipeline on module...\n";
+  }
 
   MPM.run(TheModule, MAM);
 
   if (Verbose)
     errs() << "Successfully ran optimization pipeline on module\n";
 
-  if (DumpIR && !dumpIR("opt"))
-    return false;
+  if (DumpIR) {
+    if (O3 && !dumpIR("opt-O3"))
+      return false;
+    else if (!dumpIR("opt"))
+      return false;
+  }
   return true;
 }
 
