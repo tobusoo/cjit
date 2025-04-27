@@ -12,21 +12,23 @@
 namespace opt {
 class Optimizer {
 public:
-  Optimizer(llvm::Module &M) : TheModule(M), Ctx(M.getContext()) {}
+    Optimizer(llvm::Module& M) : TheModule(M), Ctx(M.getContext())
+    {
+    }
 
-  bool optimizeIR();
+    bool optimizeIR();
 
-  void printModule(llvm::raw_ostream &OS = llvm::errs());
+    void printModule(llvm::raw_ostream& OS = llvm::errs());
 
 private:
-  bool createTargetMachine();
+    bool createTargetMachine();
 
-  bool dumpIR(llvm::StringRef Suffix);
+    bool dumpIR(llvm::StringRef Suffix);
 
-  llvm::Module &TheModule;
-  llvm::LLVMContext &Ctx;
-  std::unique_ptr<llvm::TargetMachine> TheTargetMachine;
-  std::optional<llvm::DataLayout> DL;
+    llvm::Module& TheModule;
+    llvm::LLVMContext& Ctx;
+    std::unique_ptr<llvm::TargetMachine> TheTargetMachine;
+    std::optional<llvm::DataLayout> DL;
 };
 } // namespace opt
 

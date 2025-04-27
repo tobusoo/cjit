@@ -17,18 +17,18 @@ bool initLLVM();
 
 class TestRunner {
 public:
-  TestRunner(std::vector<std::filesystem::path> &&Benchmarks);
+    TestRunner(std::vector<std::filesystem::path>&& Benchmarks);
 
-  bool run();
+    bool run();
 
 private:
-  std::unique_ptr<BenchRunner> getBenchRunner(llvm::StringRef BenchName);
+    std::unique_ptr<BenchRunner> getBenchRunner(llvm::StringRef BenchName);
 
-  bool runBenchmark(std::filesystem::path BenchDir);
+    bool runBenchmark(std::filesystem::path BenchDir);
 
-  std::vector<std::filesystem::path> Benchmarks;
-  llvm::ExitOnError ExitOnErr;
-  std::unique_ptr<llvm::orc::LLJIT> JIT;
+    std::vector<std::filesystem::path> Benchmarks;
+    llvm::ExitOnError ExitOnErr;
+    std::unique_ptr<llvm::orc::LLJIT> JIT;
 };
 } // namespace tr
 

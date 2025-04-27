@@ -1,15 +1,6 @@
 #include "Optimizer.h"
 #include "Passes/CustomPass.h"
 
-#include "llvm/ADT/Twine.h"
-#include "llvm/Transforms/IPO/ModuleInliner.h"
-#include "llvm/Transforms/Scalar/EarlyCSE.h"
-#include "llvm/Transforms/Scalar/IndVarSimplify.h"
-#include "llvm/Transforms/Scalar/LICM.h"
-#include "llvm/Transforms/Scalar/LoopUnrollPass.h"
-#include "llvm/Transforms/Vectorize/LoopVectorize.h"
-#include <llvm-19/llvm/Passes/OptimizationLevel.h>
-#include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h>
@@ -25,9 +16,16 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/TargetParser/Host.h>
+#include <llvm/Transforms/IPO/Inliner.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar/ConstraintElimination.h>
+#include <llvm/Transforms/Scalar/EarlyCSE.h>
 #include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/Scalar/IndVarSimplify.h>
 #include <llvm/Transforms/Scalar/LICM.h>
+#include <llvm/Transforms/Scalar/LoopDeletion.h>
+#include <llvm/Transforms/Scalar/LoopIdiomRecognize.h>
+#include <llvm/Transforms/Scalar/LoopInstSimplify.h>
 #include <llvm/Transforms/Scalar/LoopPassManager.h>
 #include <llvm/Transforms/Scalar/LoopRotation.h>
 #include <llvm/Transforms/Scalar/LoopSimplifyCFG.h>
@@ -36,8 +34,9 @@
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
 #include <llvm/Transforms/Scalar/Sink.h>
 #include <llvm/Transforms/Utils/LoopSimplify.h>
-#include <llvm/Transforms/Scalar/LICM.h>
+#include <llvm/Transforms/Vectorize/LoopVectorize.h>
 
+#include <iostream>
 #include <optional>
 #include <string>
 
@@ -53,152 +52,181 @@ using namespace opt;
 
 static cl::opt<bool> Verbose("verbose", cl::init(false));
 
-static cl::alias VerboseAlias("v", cl::desc("alias for --verbose"),
-                              cl::aliasopt(Verbose));
+static cl::alias VerboseAlias("v", cl::desc("alias for --verbose"), cl::aliasopt(Verbose));
 
 static cl::opt<bool> DumpIR("dump-ir", cl::init(false));
 
 static cl::opt<bool> O3("O3", cl::init(false));
 
 static cl::opt<bool>
-    DebugPM("debug-pass-manager", cl::Hidden,
-            cl::desc("Print pass management debugging information"),
-            cl::init(false));
+        DebugPM("debug-pass-manager",
+                cl::Hidden,
+                cl::desc("Print pass management debugging information"),
+                cl::init(false));
 
-bool Optimizer::optimizeIR() {
-  if (!createTargetMachine())
-    return false;
+bool Optimizer::optimizeIR()
+{
+    if (!createTargetMachine())
+        return false;
 
-  if (DumpIR && !dumpIR("init"))
-    return false;
+    if (DumpIR && !dumpIR("init"))
+        return false;
 
-  PipelineTuningOptions PTO;
+    PipelineTuningOptions PTO;
 
-  LoopAnalysisManager LAM;
-  FunctionAnalysisManager FAM;
-  CGSCCAnalysisManager CGAM;
-  ModuleAnalysisManager MAM;
+    LoopAnalysisManager LAM;
+    FunctionAnalysisManager FAM;
+    CGSCCAnalysisManager CGAM;
+    ModuleAnalysisManager MAM;
 
-  PassInstrumentationCallbacks PIC;
-  PrintPassOptions PrintPassOpts;
+    PassInstrumentationCallbacks PIC;
+    PrintPassOptions PrintPassOpts;
 
-  StandardInstrumentations SI(Ctx, /*DebugLogging=*/DebugPM,
-                              /*VerifyEach=*/false, PrintPassOpts);
-  SI.registerCallbacks(PIC, &MAM);
-  PassBuilder PB(&*TheTargetMachine, PTO, /*PGOOpt=*/std::nullopt, &PIC);
+    StandardInstrumentations SI(
+            Ctx,
+            /*DebugLogging=*/DebugPM,
+            /*VerifyEach=*/false,
+            PrintPassOpts);
+    SI.registerCallbacks(PIC, &MAM);
+    PassBuilder PB(&*TheTargetMachine, PTO, /*PGOOpt=*/std::nullopt, &PIC);
 
-  // Register all the basic analyses with the managers.
-  PB.registerModuleAnalyses(MAM);
-  PB.registerCGSCCAnalyses(CGAM);
-  PB.registerFunctionAnalyses(FAM);
-  PB.registerLoopAnalyses(LAM);
-  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+    // Register all the basic analyses with the managers.
+    PB.registerModuleAnalyses(MAM);
+    PB.registerCGSCCAnalyses(CGAM);
+    PB.registerFunctionAnalyses(FAM);
+    PB.registerLoopAnalyses(LAM);
+    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
-  ModulePassManager MPM;
+    ModulePassManager MPM;
 
-  MPM.addPass(VerifierPass());
+    MPM.addPass(VerifierPass());
 
-  if (O3) {
-    if (auto Err = PB.parsePassPipeline(MPM, "default<O3>")) {
-      errs() << toString(std::move(Err)) << "\n";
-      return false;
+    if (O3) {
+        if (auto Err = PB.parsePassPipeline(MPM, "default<O3>")) {
+            errs() << toString(std::move(Err)) << "\n";
+            return false;
+        }
+    } else {
+        FunctionPassManager FPM;
+        FPM.addPass(SimplifyCFGPass()); // Can be removed
+        FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
+        FPM.addPass(EarlyCSEPass());    // Can be removed
+        FPM.addPass(InstCombinePass()); // Can be removed
+
+        LoopPassManager LPM;
+        LPM.addPass(LoopSimplifyCFGPass()); // Can be removed
+        LPM.addPass(LoopRotatePass());
+        LPM.addPass(LICMPass(LICMOptions()));
+
+        // hoist invariant calculations for sum-2, sum-3
+        LPM.addPass(SimpleLoopUnswitchPass(/* NonTrivial */ true));
+
+        LPM.addPass(IndVarSimplifyPass()); // Can be removed
+
+        FPM.addPass(createFunctionToLoopPassAdaptor(std::move(LPM), /* UseMemorySSA */ true));
+        FPM.addPass(SimplifyCFGPass()); // Can be removed
+
+        FPM.addPass(GVNPass());
+        FPM.addPass(InstCombinePass());  // Can be removed
+        FPM.addPass(LoopSimplifyPass()); // Can be removed
+
+        FPM.addPass(LoopVectorizePass());
+        FPM.addPass(InstCombinePass()); // Can be removed
+        FPM.addPass(SimplifyCFGPass());
+
+        // inline sum-4
+        MPM.addPass(ModuleInlinerPass());
+        MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
     }
-  } else {
-    /// TODO: Extend pipeline here (extend \c MPM).
-    FunctionPassManager FPM;
-    FPM.addPass(SROAPass(SROAOptions::ModifyCFG));
-    FPM.addPass(InstCombinePass());
 
-    MPM.addPass(createModuleToFunctionPassAdaptor(std::move(FPM)));
-  }
+    MPM.addPass(VerifierPass());
 
-  MPM.addPass(VerifierPass());
+    if (Verbose) {
+        if (O3)
+            errs() << "Running O3 optimization pipeline on module...\n";
+        else
+            errs() << "Running custom optimization pipeline on module...\n";
+    }
 
-  if (Verbose) {
-    if (O3)
-      errs() << "Running O3 optimization pipeline on module...\n";
-    else
-      errs() << "Running custom optimization pipeline on module...\n";
-  }
+    MPM.run(TheModule, MAM);
 
-  MPM.run(TheModule, MAM);
+    if (Verbose)
+        errs() << "Successfully ran optimization pipeline on module\n";
 
-  if (Verbose)
-    errs() << "Successfully ran optimization pipeline on module\n";
-
-  if (DumpIR) {
-    if (O3 && !dumpIR("opt-O3"))
-      return false;
-    else if (!dumpIR("opt"))
-      return false;
-  }
-  return true;
+    if (DumpIR) {
+        if (O3 && !dumpIR("opt-O3"))
+            return false;
+        else if (!dumpIR("opt"))
+            return false;
+    }
+    return true;
 }
 
-bool Optimizer::createTargetMachine() {
-  auto TargetTriple = TheModule.getTargetTriple();
+bool Optimizer::createTargetMachine()
+{
+    auto TargetTriple = TheModule.getTargetTriple();
 
-  std::string Error;
-  auto Target = TargetRegistry::lookupTarget(TargetTriple, Error);
+    std::string Error;
+    auto Target = TargetRegistry::lookupTarget(TargetTriple, Error);
 
-  // Print an error and exit if we couldn't find the requested target.
-  // This generally occurs if we've forgotten to initialise the
-  // TargetRegistry or we have a bogus target triple.
-  if (!Target) {
-    errs() << "Failed to find target with target triple " << TargetTriple
-           << ": " << Error << "\n";
-    return false;
-  }
+    // Print an error and exit if we couldn't find the requested target.
+    // This generally occurs if we've forgotten to initialise the
+    // TargetRegistry or we have a bogus target triple.
+    if (!Target) {
+        errs() << "Failed to find target with target triple " << TargetTriple << ": " << Error
+               << "\n";
+        return false;
+    }
 
-  /// TODO: Figure out CPU and features for the current processor.
-  auto CPU = llvm::sys::getHostCPUName();
-  std::string Features = "";
-  auto FeatMap = sys::getHostCPUFeatures();
-  for (auto It = FeatMap.begin(), EndIt = FeatMap.end(); It != EndIt; ++It) {
-    if (It->getValue())
-      Features += "+";
-    else
-      Features += "-";
-    Features += It->getKey();
-    if (It != EndIt)
-      Features += ",";
-  }
+    /// TODO: Figure out CPU and features for the current processor.
+    auto CPU = llvm::sys::getHostCPUName();
+    std::string Features = "";
+    auto FeatMap = sys::getHostCPUFeatures();
+    for (auto It = FeatMap.begin(), EndIt = FeatMap.end(); It != EndIt; ++It) {
+        if (It->getValue())
+            Features += "+";
+        else
+            Features += "-";
+        Features += It->getKey();
+        if (It != EndIt)
+            Features += ",";
+    }
 
-  TargetOptions TO;
-  auto *TM =
-      Target->createTargetMachine(TargetTriple, CPU, Features, TO, Reloc::PIC_);
-  if (!TM) {
-    errs() << "Failed to create target machine\n";
-    return false;
-  }
-  TheTargetMachine.reset(TM);
-  DL = TheTargetMachine->createDataLayout();
-  TheModule.setTargetTriple(TheTargetMachine->getTargetTriple().str());
-  TheModule.setDataLayout(*DL);
-  Ctx.setDefaultTargetCPU(CPU);
-  Ctx.setDefaultTargetFeatures(Features);
-  for (auto &F : TheModule) {
-    F.addFnAttr("target-cpu", CPU);
-    if (!Features.empty())
-      F.addFnAttr("target-features", Features);
-  }
-  return true;
+    TargetOptions TO;
+    auto* TM = Target->createTargetMachine(TargetTriple, CPU, Features, TO, Reloc::PIC_);
+    if (!TM) {
+        errs() << "Failed to create target machine\n";
+        return false;
+    }
+    TheTargetMachine.reset(TM);
+    DL = TheTargetMachine->createDataLayout();
+    TheModule.setTargetTriple(TheTargetMachine->getTargetTriple().str());
+    TheModule.setDataLayout(*DL);
+    Ctx.setDefaultTargetCPU(CPU);
+    Ctx.setDefaultTargetFeatures(Features);
+    for (auto& F : TheModule) {
+        F.addFnAttr("target-cpu", CPU);
+        if (!Features.empty())
+            F.addFnAttr("target-features", Features);
+    }
+    return true;
 }
 
-void Optimizer::printModule(llvm::raw_ostream &OS) {
-  TheModule.print(OS, /*AAW=*/nullptr);
+void Optimizer::printModule(llvm::raw_ostream& OS)
+{
+    TheModule.print(OS, /*AAW=*/nullptr);
 }
 
-bool Optimizer::dumpIR(StringRef Suffix) {
-  std::string FileName = (TheModule.getName().str() + "." + Suffix).str();
-  std::error_code EC;
-  llvm::raw_fd_ostream OS(FileName, EC);
-  if (EC) {
-    errs() << "Failed to dump " << Suffix << " to " << FileName << ": "
-           << EC.message() << "\n";
-    return false;
-  }
-  printModule(OS);
-  errs() << " -- " << FileName << "\n";
-  return true;
+bool Optimizer::dumpIR(StringRef Suffix)
+{
+    std::string FileName = (TheModule.getName().str() + "." + Suffix).str();
+    std::error_code EC;
+    llvm::raw_fd_ostream OS(FileName, EC);
+    if (EC) {
+        errs() << "Failed to dump " << Suffix << " to " << FileName << ": " << EC.message() << "\n";
+        return false;
+    }
+    printModule(OS);
+    errs() << " -- " << FileName << "\n";
+    return true;
 }

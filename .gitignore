@@ -7,3 +7,4 @@ compile_commands.json
 *.ll.init
 *.ll.opt
 *.ll.opt-O3
+.vscode

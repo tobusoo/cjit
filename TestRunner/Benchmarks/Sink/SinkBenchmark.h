@@ -12,9 +12,11 @@
 namespace tr {
 class SinkBenchmark : public BenchRunner {
 public:
-  SinkBenchmark(llvm::orc::LLJIT &JIT) : BenchRunner(JIT) {}
+    SinkBenchmark(llvm::orc::LLJIT& JIT) : BenchRunner(JIT)
+    {
+    }
 
-  std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
+    std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
 };
 } // namespace tr
 

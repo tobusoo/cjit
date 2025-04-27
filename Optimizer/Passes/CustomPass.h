@@ -5,10 +5,9 @@
 
 namespace opt {
 struct CustomPass : llvm::PassInfoMixin<CustomPass> {
-  CustomPass() = default;
+    CustomPass() = default;
 
-  llvm::PreservedAnalyses run(llvm::Function &F,
-                              llvm::FunctionAnalysisManager &FAM);
+    llvm::PreservedAnalyses run(llvm::Function& F, llvm::FunctionAnalysisManager& FAM);
 };
 } // namespace opt
 

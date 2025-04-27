@@ -11,9 +11,11 @@
 namespace tr {
 class PIBenchmark : public BenchRunner {
 public:
-  PIBenchmark(llvm::orc::LLJIT &JIT) : BenchRunner(JIT) {}
+    PIBenchmark(llvm::orc::LLJIT& JIT) : BenchRunner(JIT)
+    {
+    }
 
-  std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
+    std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
 };
 } // namespace tr
 

@@ -11,9 +11,11 @@
 namespace tr {
 class Sum4Benchmark : public BenchRunner {
 public:
-  Sum4Benchmark(llvm::orc::LLJIT &JIT) : BenchRunner(JIT) {}
+    Sum4Benchmark(llvm::orc::LLJIT& JIT) : BenchRunner(JIT)
+    {
+    }
 
-  std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
+    std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
 };
 } // namespace tr
 

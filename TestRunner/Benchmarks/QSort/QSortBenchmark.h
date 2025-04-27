@@ -11,9 +11,11 @@
 namespace tr {
 class QSortBenchmark : public BenchRunner {
 public:
-  QSortBenchmark(llvm::orc::LLJIT &JIT) : BenchRunner(JIT) {}
+    QSortBenchmark(llvm::orc::LLJIT& JIT) : BenchRunner(JIT)
+    {
+    }
 
-  std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
+    std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
 };
 } // namespace tr
 

@@ -4,6 +4,7 @@
 using namespace llvm;
 using namespace opt;
 
-PreservedAnalyses CustomPass::run(Function &F, FunctionAnalysisManager &FAM) {
-  return PreservedAnalyses::all();
+PreservedAnalyses CustomPass::run(Function& F, FunctionAnalysisManager& FAM)
+{
+    return PreservedAnalyses::all();
 }

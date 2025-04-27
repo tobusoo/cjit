@@ -11,9 +11,11 @@
 namespace tr {
 class IntMMBenchmark : public BenchRunner {
 public:
-  IntMMBenchmark(llvm::orc::LLJIT &JIT) : BenchRunner(JIT) {}
+    IntMMBenchmark(llvm::orc::LLJIT& JIT) : BenchRunner(JIT)
+    {
+    }
 
-  std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
+    std::optional<double> run(unsigned NumIters, unsigned IterLength) override;
 };
 } // namespace tr
 

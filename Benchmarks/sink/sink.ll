@@ -1,122 +1,101 @@
 ; ModuleID = 'sink.c'
 source_filename = "sink.c"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
-; Function Attrs: nounwind uwtable
-define dso_local double @sink(ptr noundef %0, i32 noundef %1) #0 {
-  %3 = alloca ptr, align 8
-  %4 = alloca i32, align 4
-  %5 = alloca double, align 8
-  %6 = alloca i32, align 4
-  %7 = alloca double, align 8
-  store ptr %0, ptr %3, align 8, !tbaa !5
-  store i32 %1, ptr %4, align 4, !tbaa !9
-  call void @llvm.lifetime.start.p0(i64 8, ptr %5) #3
-  store double 0.000000e+00, ptr %5, align 8, !tbaa !11
-  call void @llvm.lifetime.start.p0(i64 4, ptr %6) #3
-  store i32 0, ptr %6, align 4, !tbaa !9
-  br label %8
+; Function Attrs: noinline nounwind uwtable
+define dso_local double @sink(ptr noundef %arr, i32 noundef %n) #0 {
+entry:
+  %arr.addr = alloca ptr, align 8
+  %n.addr = alloca i32, align 4
+  %res = alloca double, align 8
+  %i = alloca i32, align 4
+  %partial_res = alloca double, align 8
+  store ptr %arr, ptr %arr.addr, align 8
+  store i32 %n, ptr %n.addr, align 4
+  store double 0.000000e+00, ptr %res, align 8
+  store i32 0, ptr %i, align 4
+  br label %for.cond
 
-8:                                                ; preds = %48, %2
-  %9 = load i32, ptr %6, align 4, !tbaa !9
-  %10 = load i32, ptr %4, align 4, !tbaa !9
-  %11 = icmp ult i32 %9, %10
-  br i1 %11, label %13, label %12
+for.cond:                                         ; preds = %for.inc, %entry
+  %0 = load i32, ptr %i, align 4
+  %1 = load i32, ptr %n.addr, align 4
+  %cmp = icmp ult i32 %0, %1
+  br i1 %cmp, label %for.body, label %for.end
 
-12:                                               ; preds = %8
-  call void @llvm.lifetime.end.p0(i64 4, ptr %6) #3
-  br label %51
+for.body:                                         ; preds = %for.cond
+  %2 = load ptr, ptr %arr.addr, align 8
+  %3 = load i32, ptr %i, align 4
+  %idxprom = sext i32 %3 to i64
+  %arrayidx = getelementptr inbounds i32, ptr %2, i64 %idxprom
+  %4 = load i32, ptr %arrayidx, align 4
+  %conv = sitofp i32 %4 to double
+  %call = call double @sin(double noundef %conv) #2
+  %5 = load ptr, ptr %arr.addr, align 8
+  %6 = load i32, ptr %i, align 4
+  %idxprom1 = sext i32 %6 to i64
+  %arrayidx2 = getelementptr inbounds i32, ptr %5, i64 %idxprom1
+  %7 = load i32, ptr %arrayidx2, align 4
+  %conv3 = sitofp i32 %7 to double
+  %call4 = call double @cos(double noundef %conv3) #2
+  %mul = fmul double %call, %call4
+  store double %mul, ptr %partial_res, align 8
+  %8 = load ptr, ptr %arr.addr, align 8
+  %9 = load i32, ptr %i, align 4
+  %idxprom5 = sext i32 %9 to i64
+  %arrayidx6 = getelementptr inbounds i32, ptr %8, i64 %idxprom5
+  %10 = load i32, ptr %arrayidx6, align 4
+  %cmp7 = icmp slt i32 %10, 0
+  br i1 %cmp7, label %if.then, label %if.end
 
-13:                                               ; preds = %8
-  call void @llvm.lifetime.start.p0(i64 8, ptr %7) #3
-  %14 = load ptr, ptr %3, align 8, !tbaa !5
-  %15 = load i32, ptr %6, align 4, !tbaa !9
-  %16 = sext i32 %15 to i64
-  %17 = getelementptr inbounds i32, ptr %14, i64 %16
-  %18 = load i32, ptr %17, align 4, !tbaa !9
-  %19 = sitofp i32 %18 to double
-  %20 = call double @sin(double noundef %19) #3
-  %21 = load ptr, ptr %3, align 8, !tbaa !5
-  %22 = load i32, ptr %6, align 4, !tbaa !9
-  %23 = sext i32 %22 to i64
-  %24 = getelementptr inbounds i32, ptr %21, i64 %23
-  %25 = load i32, ptr %24, align 4, !tbaa !9
-  %26 = sitofp i32 %25 to double
-  %27 = call double @cos(double noundef %26) #3
-  %28 = fmul double %20, %27
-  store double %28, ptr %7, align 8, !tbaa !11
-  %29 = load ptr, ptr %3, align 8, !tbaa !5
-  %30 = load i32, ptr %6, align 4, !tbaa !9
-  %31 = sext i32 %30 to i64
-  %32 = getelementptr inbounds i32, ptr %29, i64 %31
-  %33 = load i32, ptr %32, align 4, !tbaa !9
-  %34 = icmp slt i32 %33, 0
-  br i1 %34, label %35, label %39
+if.then:                                          ; preds = %for.body
+  %11 = load double, ptr %partial_res, align 8
+  %12 = load double, ptr %res, align 8
+  %add = fadd double %12, %11
+  store double %add, ptr %res, align 8
+  br label %if.end
 
-35:                                               ; preds = %13
-  %36 = load double, ptr %7, align 8, !tbaa !11
-  %37 = load double, ptr %5, align 8, !tbaa !11
-  %38 = fadd double %37, %36
-  store double %38, ptr %5, align 8, !tbaa !11
-  br label %39
+if.end:                                           ; preds = %if.then, %for.body
+  %13 = load ptr, ptr %arr.addr, align 8
+  %14 = load i32, ptr %i, align 4
+  %idxprom9 = sext i32 %14 to i64
+  %arrayidx10 = getelementptr inbounds i32, ptr %13, i64 %idxprom9
+  %15 = load i32, ptr %arrayidx10, align 4
+  %conv11 = sitofp i32 %15 to double
+  %16 = load double, ptr %res, align 8
+  %add12 = fadd double %16, %conv11
+  store double %add12, ptr %res, align 8
+  br label %for.inc
 
-39:                                               ; preds = %35, %13
-  %40 = load ptr, ptr %3, align 8, !tbaa !5
-  %41 = load i32, ptr %6, align 4, !tbaa !9
-  %42 = sext i32 %41 to i64
-  %43 = getelementptr inbounds i32, ptr %40, i64 %42
-  %44 = load i32, ptr %43, align 4, !tbaa !9
-  %45 = sitofp i32 %44 to double
-  %46 = load double, ptr %5, align 8, !tbaa !11
-  %47 = fadd double %46, %45
-  store double %47, ptr %5, align 8, !tbaa !11
-  call void @llvm.lifetime.end.p0(i64 8, ptr %7) #3
-  br label %48
+for.inc:                                          ; preds = %if.end
+  %17 = load i32, ptr %i, align 4
+  %inc = add nsw i32 %17, 1
+  store i32 %inc, ptr %i, align 4
+  br label %for.cond, !llvm.loop !6
 
-48:                                               ; preds = %39
-  %49 = load i32, ptr %6, align 4, !tbaa !9
-  %50 = add nsw i32 %49, 1
-  store i32 %50, ptr %6, align 4, !tbaa !9
-  br label %8, !llvm.loop !13
-
-51:                                               ; preds = %12
-  %52 = load double, ptr %5, align 8, !tbaa !11
-  call void @llvm.lifetime.end.p0(i64 8, ptr %5) #3
-  ret double %52
+for.end:                                          ; preds = %for.cond
+  %18 = load double, ptr %res, align 8
+  ret double %18
 }
 
-; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.lifetime.start.p0(i64 immarg, ptr nocapture) #1
+; Function Attrs: nounwind
+declare double @sin(double noundef) #1
 
 ; Function Attrs: nounwind
-declare double @sin(double noundef) #2
+declare double @cos(double noundef) #1
 
-; Function Attrs: nounwind
-declare double @cos(double noundef) #2
+attributes #0 = { noinline nounwind uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #1 = { nounwind "frame-pointer"="all" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
+attributes #2 = { nounwind }
 
-; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.lifetime.end.p0(i64 immarg, ptr nocapture) #1
-
-attributes #0 = { nounwind uwtable "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
-attributes #1 = { nocallback nofree nosync nounwind willreturn memory(argmem: readwrite) }
-attributes #2 = { nounwind "no-trapping-math"="true" "stack-protector-buffer-size"="8" "tune-cpu"="generic" }
-attributes #3 = { nounwind }
-
-!llvm.module.flags = !{!0, !1, !2, !3}
-!llvm.ident = !{!4}
+!llvm.module.flags = !{!0, !1, !2, !3, !4}
+!llvm.ident = !{!5}
 
 !0 = !{i32 1, !"wchar_size", i32 4}
 !1 = !{i32 8, !"PIC Level", i32 2}
 !2 = !{i32 7, !"PIE Level", i32 2}
 !3 = !{i32 7, !"uwtable", i32 2}
-!4 = !{!"Ubuntu clang version 19.1.2 (++20241028122730+d8752671e825-1~exp1~20241028122742.57)"}
-!5 = !{!6, !6, i64 0}
-!6 = !{!"any pointer", !7, i64 0}
-!7 = !{!"omnipotent char", !8, i64 0}
-!8 = !{!"Simple C/C++ TBAA"}
-!9 = !{!10, !10, i64 0}
-!10 = !{!"int", !7, i64 0}
-!11 = !{!12, !12, i64 0}
-!12 = !{!"double", !7, i64 0}
-!13 = distinct !{!13, !14, !15}
-!14 = !{!"llvm.loop.mustprogress"}
-!15 = !{!"llvm.loop.unroll.disable"}
+!4 = !{i32 7, !"frame-pointer", i32 2}
+!5 = !{!"clang version 19.1.0 (https://github.com/llvm/llvm-project.git a4bf6cd7cfb1a1421ba92bca9d017b49936c55e4)"}
+!6 = distinct !{!6, !7}
+!7 = !{!"llvm.loop.mustprogress"}
